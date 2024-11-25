@@ -5,9 +5,10 @@
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'net.clojars.plooney81/nectar-sql)
-#_(def version "0.1.0-SNAPSHOT")
+#_(def version "1.0.1-SNAPSHOT")
 ; alternatively, use MAJOR.MINOR.COMMITS:
 (def version (format "1.0.%s" (b/git-count-revs nil)))
+#_(def version "1.0.1")
 (def class-dir "target/classes")
 
 (defn test "Run all the tests." [opts]
