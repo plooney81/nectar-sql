@@ -5,7 +5,7 @@
            (net.sf.jsqlparser.statement.select
              FromItem GroupByElement Join Limit Offset OrderByElement PlainSelect SelectItem SetOperationList WithItem)
            (net.sf.jsqlparser.expression
-             AnalyticExpression CastExpression LongValue NotExpression TrimFunction Function Parenthesis SignedExpression
+             AnalyticExpression CastExpression JsonExpression LongValue NotExpression TrimFunction Function Parenthesis SignedExpression
              WindowDefinition)
            (net.sf.jsqlparser.schema Column)
            ))
@@ -26,9 +26,6 @@
   (-> jsql
       get-select
       get-select))
-
-(defn get-select-body [^PlainSelect jsql]
-  (.getSelectBody jsql))
 
 (defn get-offset [^PlainSelect jsql-select]
   (.getOffset jsql-select))
@@ -187,6 +184,9 @@
   (.getExpression jsql-expr))
 
 (defmethod get-expression NotExpression [jsql-expr]
+  (.getExpression jsql-expr))
+
+(defmethod get-expression JsonExpression [jsql-expr]
   (.getExpression jsql-expr))
 
 (defmethod get-expression :default [jsql-expr]

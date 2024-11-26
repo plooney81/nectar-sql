@@ -1,5 +1,6 @@
 (ns plooney81.nectar.sql
   (:require [honey.sql :as honey]
+            [honey.sql.pg-ops]
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.expression]
             [plooney81.nectar.sql.impl :as impl]
@@ -21,38 +22,17 @@
   (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql)))
 
 (comment
-
   (do
     (require '[honey.sql :as honey])
     (defn around-the-horn [sql-string]
       (-> (ripen sql-string)
           (honey/format {:inline true :pretty true}))))
 
-
-  (-> {:select [:*], :from [:orders], :where [:not-between :amount 100 500]}
-      (honey/format {:inline true}))
-  (-> (str "SELECT *\nFROM orders\nWHERE status IN ('pending', 'shipped', 'delivered') AND status NOT IN ('bloop', 'skoop')")
-      (ripen)
-      #_(around-the-horn)
-      )
-  (-> (str "SELECT * FROM orders WHERE NOT something")
+  (-> (str "SELECT json_column - 'age'")
       (ripen)
       #_(around-the-horn))
-  (-> (str "SELECT * FROM employees JOIN departments USING (department_id, employee_id)")
-      #_(ripen)
-      (around-the-horn))
-  (-> {:select [:*]
-       :from   [:employees]
-       :join   [[[:departments [:using :department_id]]]]
-       }
-      (honey/format))
-  (honey/format
-    {:select [:employees.name :departments.name]
-     :from   [:employees]
-     :join   [:departments [:using :department_id]]})
-  (honey/format
-    {:select [:projects.name :assignments.task]
-     :from   [:projects]
-     :join   [:assignments [:using :project_id :employee_id]]})
+
+  (honey/format {:select [[[:? :json_column "name"]]]} {:inline true :pretty true})
+  (honey/format {:select [[:- :json_column "age"]]} {:inline true :pretty true})
 
   )

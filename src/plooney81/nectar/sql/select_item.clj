@@ -99,7 +99,7 @@
        (catch Exception e
          (throw
            (IllegalArgumentException.
-             (str "Unsupported Select Item type: " (.getClass jsql-expression)))))))
+             (str "Unsupported Select Item type: " (.getClass jsql-expression) "\n" e))))))
 
 (defn select-item->honey [^SelectItem select-item]
   (let [alias (helpers/keywordize-alias select-item)]
