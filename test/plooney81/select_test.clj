@@ -1,4 +1,4 @@
-(ns plooney81.nectar-sql-test
+(ns plooney81.select-test
   (:require [clojure.string :as str]
             [clojure.test :refer :all]
             [honey.sql :as honey]
@@ -231,7 +231,17 @@
                                           {:select [:tt.first_column :tt.second_column], :from [[:third_table :tt]]}]}
                              {:select [:ft.first_column :ft.second_column], :from [[:fourth_table :ft]]}]}
                 {:select [:fft.first_column :fft.second_column], :from [[:fifth_table :fft]]}],
-     :order-by [[:fft.first_column :asc]]}))
+     :order-by [[:fft.first_column :asc]]})
+  (test-nectar
+    "Joins with USING statement"
+    (str "SELECT *\n"
+         "FROM employees\n"
+         "INNER JOIN departments AS d USING (d.department_id) "
+         "INNER JOIN compensation AS c USING (c.department_id, c.employee_id)")
+    {:select     [:*]
+     :from       [:employees]
+     :inner-join [[:departments :d] [:using :d.department_id]
+                  [:compensation :c] [:using :c.department_id :c.employee_id]]}))
 
 (deftest mathematical-operations
   (test-nectar
