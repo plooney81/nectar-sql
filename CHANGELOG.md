@@ -3,7 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 ### Changed
-- Everything up to date
+- Adds support for `USING` within JOINS
+- Adds repl example to the README
+- Build and test on pulls and pushes to main
 
 ## [1.0.7] - 2024-11-25
 ### Changed
