@@ -31,16 +31,19 @@
     (honey/register-op! operator)))
 
 (defn- expr->honey [expression]
-  (if (:type expression)
-    (let [convert-exprs-list @operator-list
-          convert-exprs? (contains? convert-exprs-list (:type expression))
-          convert-exprs (fn [exprs]
-                          (map expr->honey exprs))
-          exprs         (if convert-exprs?
-                          (convert-exprs (:exprs expression))
-                          (:exprs expression))]
-      (into [(:type expression)] exprs))
-    expression))
+  (let [convert-fn (fn [expression]
+                     (let [convert-exprs-list @operator-list
+                           convert-exprs?     (contains? convert-exprs-list (:type expression))
+                           convert-exprs      (fn [exprs]
+                                                (map expr->honey exprs))
+                           exprs              (if convert-exprs?
+                                                (convert-exprs (:exprs expression))
+                                                (:exprs expression))]
+                       (into [(:type expression)] exprs)))]
+    (cond
+      (:type expression) (convert-fn expression)
+      (and (vector? expression) (:type (first expression))) [(convert-fn (first expression))]
+      :else expression)))
 
 (defn expression->honey [jsql-expr]
   (expr->honey (expression jsql-expr)))

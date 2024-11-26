@@ -1,16 +1,17 @@
 (ns plooney81.nectar.sql.expression
   (:require [clojure.string :as str]
+            [honey.sql.pg-ops :as sut]
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.impl :as impl]
             [plooney81.nectar.sql.helpers :as helpers])
   (:import (net.sf.jsqlparser.expression.operators.arithmetic
-             Addition BitwiseAnd BitwiseLeftShift BitwiseOr BitwiseRightShift BitwiseXor Concat Division Modulo Multiplication Subtraction)
+             Addition BitwiseAnd BitwiseLeftShift BitwiseOr BitwiseRightShift Concat Division Modulo Multiplication Subtraction)
            (net.sf.jsqlparser.expression.operators.conditional AndExpression OrExpression)
            (net.sf.jsqlparser.expression.operators.relational
-             Between EqualsTo GreaterThan GreaterThanEquals InExpression LikeExpression MinorThan MinorThanEquals
+             Between EqualsTo GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CastExpression DoubleValue NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue)
+             CastExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -90,7 +91,7 @@
   (handle-prefix-notation-operation :+ (get-left-and-right jsql-expr)))
 
 (defmethod impl/expression Subtraction [^Subtraction jsql-expr]
-  (handle-prefix-notation-operation :- (get-left-and-right jsql-expr)))
+  [(handle-prefix-notation-operation :- (get-left-and-right jsql-expr))])
 
 (impl/register-operator! :<<)
 (defmethod impl/expression BitwiseLeftShift [^BitwiseLeftShift jsql-expr]
@@ -154,6 +155,46 @@
 
 (defmethod impl/expression Function [^Function jsql-expr]
   (impl/function->honey jsql-expr))
+
+(defn trim-inner-quotes
+  "Removes single quotes around a string if they exist"
+  [v]
+  (if (and (string? v) (re-matches #"^'.*'$" v))
+    (subs v 1 (dec (count v)))
+    v)
+  )
+
+(defn cleanup-key
+  "Tries to convert to an int if possible. If not trim-inner-quotes."
+  [k]
+  (try
+    (Integer/parseInt k)
+    (catch NumberFormatException e
+      (trim-inner-quotes k))))
+
+;; https://github.com/seancorfield/honeysql/blob/develop/test/honey/sql/pg_ops_test.cljc
+(defmethod impl/expression JsonExpression [^JsonExpression jsql-expr]
+  (let [expression (impl/expression (jsql/get-expression jsql-expr))
+        expression (if (vector? expression) (first expression) expression)
+        {:keys [operator exprs]} (->> jsql-expr
+                                      (.getIdentList)
+                                      (map (fn [ident]
+                                             {:operator (keyword (.getValue ident))
+                                              :exprs    (cleanup-key (.getKey ident))}))
+                                      (apply merge))]
+    [[operator expression exprs]]))
+
+(impl/register-operator! :?)
+(impl/register-operator! :?|)
+(defmethod impl/expression JsonOperator [^JsonOperator jsql-expr]
+  (let [operator      (.getStringExpression jsql-expr)
+        json-operator (case operator
+                        "@>" sut/at>
+                        "<@" sut/<at
+                        "@?" sut/at?
+                        "@@" sut/atat
+                        (keyword operator))]
+    [(handle-regular-operation json-operator (get-left-and-right jsql-expr))]))
 
 (defmethod impl/expression :default [jsql-expr]
   (throw

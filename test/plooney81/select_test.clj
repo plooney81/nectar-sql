@@ -250,8 +250,8 @@
          "(first_column + second_column) * ((third_column - fourth_column) / fifth_column) AS most_math, "
          "first_column % second_column AS modulo_example\n"
          "FROM first_table AS ft")
-    {:select [[[:/ [:- :first_column :second_column] 2] :something]
-              [[:* [:+ :first_column :second_column] [:/ [:- :third_column :fourth_column] :fifth_column]] :most_math]
+    {:select [[[:/ [[:- :first_column :second_column]] 2] :something]
+              [[:* [:+ :first_column :second_column] [:/ [[:- :third_column :fourth_column]] :fifth_column]] :most_math]
               [[:% :first_column :second_column] :modulo_example]],
      :from   [[:first_table :ft]]})
   (test-nectar
@@ -259,18 +259,18 @@
     (str "SELECT (first_column - second_column) / 2 AS something, "
          "first_column + ((second_column + third_column) / fourth_column) AS another\n"
          "FROM first_table AS ft")
-    {:select [[[:/ [:- :first_column :second_column] 2] :something]
+    {:select [[[:/ [[:- :first_column :second_column]] 2] :something]
               [[:+ :first_column [:/ [:+ :second_column :third_column] :fourth_column]] :another]],
-     :from [[:first_table :ft]]})
+     :from   [[:first_table :ft]]})
   (testing "Signed expression and RegEx Match Operator"
     (let [regex    "SELECT 'hello' ~ '.*lo'"
-          negative "SELECT 1 - -42 AS negative_addition"
+          negative "SELECT (1 - -42) AS negative_addition"
           positive "SELECT 1 + +42 AS positive_addition"
           bitwise  "SELECT ~1 AS bitwise_example"]
       (are [sql-string honey]
         (= (nsql/ripen sql-string) honey)
         regex {:select [[[:raw "'hello' ~ '.*lo'"]]]}
-        negative {:select [[[:- 1 -42] :negative_addition]]}
+        negative {:select [[[[:- 1 -42]] :negative_addition]]}
         positive {:select [[[:+ 1 42] :positive_addition]]}
         bitwise {:select [[[:raw "~1"] :bitwise_example]]})
       (are [sql-string converted-sql-string]
@@ -591,3 +591,45 @@
     "NOT operator"
     (str "SELECT *\nFROM orders\nWHERE NOT something")
     {:select [:*], :from [:orders], :where [:not :something]}))
+
+(deftest json-operators
+  (test-nectar
+    "Selection operators"
+    (str "SELECT json_column -> 'name', "
+         "CAST('[\"a\", \"b\", \"c\"]' AS JSONB) -> 1, "
+         "CAST('{\"name\": \"john\", \"age\": 30}' AS JSONB) ->> 'name'")
+    {:select [[[:-> :json_column "name"]]
+              [[:-> [:cast "[\"a\", \"b\", \"c\"]" :jsonb] 1]]
+              [[:->> [:cast "{\"name\": \"john\", \"age\": 30}" :jsonb] "name"]]]})
+  (testing
+    "Existence operators"
+    (let [sql-string (str "SELECT json_column ? 'name', "
+                          "json_column_2 ?| 'name', "
+                          "json_column_3 ?& 'name'")]
+      (is (= (nsql/ripen sql-string)
+             {:select [[[:? :json_column "name"]]
+                       [[:?| :json_column_2 "name"]]
+                       [[:?& :json_column_3 "name"]]]}))
+      (is (= (honey->text (nsql/ripen sql-string))
+             (str "SELECT json_column ?? 'name', "
+                  "json_column_2 ??| 'name', "
+                  "json_column_3 ??& 'name'")))))
+  (test-nectar
+    "Containment operators"
+    (str "SELECT json_column @> '{\"age\": 30}', "
+         "json_column <@ '{\"age\": 30}'")
+    {:select [[[(keyword "@>") :json_column "{\"age\": 30}"]]
+              [[(keyword "<@") :json_column "{\"age\": 30}"]]]})
+  (test-nectar
+    "Path operators"
+    (str "SELECT (json_column #> '{person, name}') AS name_as_json, "
+         "(json_column #>> '{person, name}') AS name_as_text")
+    {:select [[[[:#> :json_column "{person, name}"]] :name_as_json]
+              [[[:#>> :json_column "{person, name}"]] :name_as_text]]})
+  (test-nectar
+    "Deletion operators"
+    (str "SELECT json_column - 'age'")
+    {:select [[[:- :json_column "age"]]]})
+
+
+  )

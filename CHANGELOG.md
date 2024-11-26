@@ -2,10 +2,13 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
-### Changed
-- Adds support for `USING` within JOINS
-- Adds repl example to the README
+### Added
+- Support for JSON expression and operators
+- Support for `USING` within JOINS
 - Build and test on pulls and pushes to main
+
+### Changed
+- README to include repl example
 
 ## [1.0.7] - 2024-11-25
 ### Changed
