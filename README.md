@@ -7,9 +7,33 @@ hummingbirds. It serves as the raw material for honey.
 
 `nectar-sql`: Converts raw sql strings into honey sql. nectar-sql takes a raw sql string, parses it (using [JSqlParser](JSqlParser)) and converts it into [honeysql](https://github.com/seancorfield/honeysql)
 
-nectar-sql is currently a work in progress and, at present, can be expected to handle a wide variety of `SELECT` queries.
+`nectar-sql` is currently a work in progress and, at present, can be expected to handle a wide variety of `SELECT` queries.
 
-## Usage
+## Try It from Your REPL
+
+The Clojure REPL includes functions for [downloading and adding libraries][clj-add-lib] at runtime, making it super easy to try it out. From your REPL...
+
+```clojure
+user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.7"})
+[com.github.jsqlparser/jsqlparser
+ com.github.plooney81/nectar-sql
+ com.github.seancorfield/honeysql]
+```
+
+You may now import `nectar-sql` and convert a SQL string to HoneySQL. This might be handy if you have some SQL on hand and you're not sure what the HoneySQL would look like. Instead of trial and error, let `nectar-sql` convert it for you.
+
+```clojure
+user> (require '[plooney81.nectar.sql :as nsql])
+nil
+
+user> (nsql/ripen "select count(distinct id) from sales 
+                     where year = 2025 and quarter = 'Q4'")
+{:select [[[:count [:distinct :id]]]],
+ :from [:sales],
+ :where [:and [:= :year 2025] [:= :quarter "Q4"]]}
+```
+
+Adding `nectar-sql` to your project works much the same way. Add the dependency and then require the library where needed.
 
 ```clojure
 (require '[plooney81.nectar.sql :as nsql])
@@ -27,6 +51,8 @@ nectar-sql is currently a work in progress and, at present, can be expected to h
  :where    [:> :age 25]
  :order-by [[:age :desc]]}
 ```
+
+## Running Tests
 
 Run the project's tests:
 
@@ -60,12 +86,17 @@ Your library will be deployed to net.clojars.plooney81/nectar-sql on clojars.org
 - nectar-sql relies heavily on [JSQLParser](JSqlParser)
     - JSQLParser doesn't currently support a few pieces of functionality, like Implicit Casting in Postgres
         - Check out the other things that [JSQLParser doesn't support](jsql-doesnt-support)
+        
+## Credit
+
+This project is proudly sponsored by [Luminare][luminare]! 😎
 
 ----
+[luminare]: https://luminare.io
 [honeysql]: https://github.com/seancorfield/honeysql
 [JSqlParser]: https://github.com/JSQLParser/JSqlParser
 [jsql-doesnt-support]: https://jsqlparser.github.io/JSqlParser/unsupported.html
-
+[clj-add-lib]: https://github.com/clojure/clojure/blob/13a2f67b91ab81cd109ea3152fce1ae76d212453/src/clj/clojure/repl/deps.clj#L59-L73
 
 ## License
 
