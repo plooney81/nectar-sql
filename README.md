@@ -15,41 +15,43 @@ The Clojure REPL includes functions for [downloading and adding libraries][clj-a
 
 ```clojure
 user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.7"})
-[com.github.jsqlparser/jsqlparser
- com.github.plooney81/nectar-sql
- com.github.seancorfield/honeysql]
+;;==> [com.github.jsqlparser/jsqlparser
+;;==>  com.github.plooney81/nectar-sql
+;;==>  com.github.seancorfield/honeysql]
 ```
 
 You may now import `nectar-sql` and convert a SQL string to HoneySQL. This might be handy if you have some SQL on hand and you're not sure what the HoneySQL would look like. Instead of trial and error, let `nectar-sql` convert it for you.
 
 ```clojure
 user> (require '[plooney81.nectar.sql :as nsql])
-nil
+;;==> nil
 
 user> (nsql/ripen "select count(distinct id) from sales 
                      where year = 2025 and quarter = 'Q4'")
-{:select [[[:count [:distinct :id]]]],
- :from [:sales],
- :where [:and [:= :year 2025] [:= :quarter "Q4"]]}
+
+;;==> {:select [[[:count [:distinct :id]]]]
+;;==>  :from   [:sales]
+;;==>  :where  [:and [:= :year 2025] [:= :quarter "Q4"]]
 ```
 
 Adding `nectar-sql` to your project works much the same way. Add the dependency and then require the library where needed.
 
 ```clojure
-(require '[plooney81.nectar.sql :as nsql])
+user> (require '[plooney81.nectar.sql :as nsql])
+;;==> nil
 
 ;; convert a query...
-(nsql/ripen
+user> (nsql/ripen
   "SELECT *
      FROM people
     WHERE age > 25
  ORDER BY age DESC")
 
 ;; ...to HoneySQL!
-{:select   [:*]
- :from     [:people]
- :where    [:> :age 25]
- :order-by [[:age :desc]]}
+;;==> {:select   [:*]
+;;==>  :from     [:people]
+;;==>  :where    [:> :age 25]
+;;==>  :order-by [[:age :desc]]}
 ```
 
 ## Running Tests
