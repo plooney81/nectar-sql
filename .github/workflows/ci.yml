@@ -1,0 +1,37 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Restore Cache Local Maven Repository
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-clojure-${{ hashFiles('**/project.clj') }}
+          restore-keys: |
+            ${{ runner.os }}-clojure
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.11.3.1463
+      - name: Run Tests
+        run: xvfb-run clojure -T:build test
+      - name: Save Cache Local Maven Repository
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-clojure-${{ hashFiles('**/project.clj') }}
+
