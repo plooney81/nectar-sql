@@ -83,7 +83,7 @@
                                    :outer sql/outer-join
                                    sql/join)]
                      (if using
-                       (join-fn honey [[table (apply sql/using using)]])
+                       (join-fn honey table (into [:using] using))
                        (apply join-fn honey table on))))
                  honey))
     honey))
