@@ -28,9 +28,9 @@
       (-> (ripen sql-string)
           (honey/format {:inline true :pretty true}))))
 
-  (-> (str "SELECT json_column - 'age'")
-      (ripen)
-      #_(around-the-horn))
+  (-> (str "SELECT json_column -> 'name' -> 'another'")
+      #_(ripen)
+      (around-the-horn))
 
   (honey/format {:select [[[:? :json_column "name"]]]} {:inline true :pretty true})
   (honey/format {:select [[:- :json_column "age"]]} {:inline true :pretty true})

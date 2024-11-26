@@ -596,9 +596,11 @@
   (test-nectar
     "Selection operators"
     (str "SELECT json_column -> 'name', "
+         "json_column -> 'name' -> 'another', "
          "CAST('[\"a\", \"b\", \"c\"]' AS JSONB) -> 1, "
          "CAST('{\"name\": \"john\", \"age\": 30}' AS JSONB) ->> 'name'")
     {:select [[[:-> :json_column "name"]]
+              [[:-> :json_column "name" "another"]]
               [[:-> [:cast "[\"a\", \"b\", \"c\"]" :jsonb] 1]]
               [[:->> [:cast "{\"name\": \"john\", \"age\": 30}" :jsonb] "name"]]]})
   (testing

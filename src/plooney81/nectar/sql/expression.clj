@@ -172,8 +172,11 @@
     (catch NumberFormatException e
       (trim-inner-quotes k))))
 
+(impl/register-operator! :->)
+(impl/register-operator! :->>)
 ;; https://github.com/seancorfield/honeysql/blob/develop/test/honey/sql/pg_ops_test.cljc
 (defmethod impl/expression JsonExpression [^JsonExpression jsql-expr]
+  (def my-jsql jsql-expr)
   (let [expression (impl/expression (jsql/get-expression jsql-expr))
         expression (if (vector? expression) (first expression) expression)
         {:keys [operator exprs]} (->> jsql-expr
@@ -181,11 +184,24 @@
                                       (map (fn [ident]
                                              {:operator (keyword (.getValue ident))
                                               :exprs    (cleanup-key (.getKey ident))}))
-                                      (apply merge))]
-    [[operator expression exprs]]))
+                                      (group-by :operator)
+                                      (map (fn [[k v]]
+                                             {:operator k
+                                              :exprs    (->> v
+                                                             (mapv :exprs))}))
+                                      (apply merge))
+        inner (into [operator expression] exprs)]
+    [inner]))
 
+(impl/register-operator! :#>)
+(impl/register-operator! :#>>)
 (impl/register-operator! :?)
 (impl/register-operator! :?|)
+(impl/register-operator! :?&)
+(impl/register-operator! sut/at>)
+(impl/register-operator! sut/<at)
+(impl/register-operator! sut/at?)
+(impl/register-operator! sut/atat)
 (defmethod impl/expression JsonOperator [^JsonOperator jsql-expr]
   (let [operator      (.getStringExpression jsql-expr)
         json-operator (case operator
