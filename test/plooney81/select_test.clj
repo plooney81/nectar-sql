@@ -145,7 +145,13 @@
     (str "SELECT ft.first_column AS my_first\n"
          "FROM first_table AS ft")
     {:select [[:ft.first_column :my_first]]
-     :from   [[:first_table :ft]]}))
+     :from   [[:first_table :ft]]})
+  (test-nectar
+    "Schema with an alias"
+    (str "SELECT ft.first_column AS my_first\n"
+         "FROM some_schema.first_table AS ft")
+    {:select [[:ft.first_column :my_first]]
+     :from   [[:some_schema.first_table :ft]]}))
 
 (deftest grouping-and-ordering
   (test-nectar

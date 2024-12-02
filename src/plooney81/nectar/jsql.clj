@@ -85,10 +85,19 @@
   (when-let [table (.getTable column)]
     (get-name table)))
 
+(defn get-schema [^FromItem from-item]
+  (.getSchemaName from-item))
+
 (defn convert-from [^FromItem from-item]
-  (if-let [alias (get-alias from-item)]
-    [(keyword (get-name from-item)) (keyword alias)]
-    (keyword (.toString from-item))))
+  (let [alias  (get-alias from-item)
+        schema (get-schema from-item)]
+    (if alias
+      (let [name  (get-name from-item)
+            table (if schema
+                    (str schema "." name)
+                    name)]
+        [(keyword table) (keyword alias)])
+      (keyword (.toString from-item)))))
 
 (defn get-join-items [^PlainSelect jsql-select]
   (.getJoins jsql-select))
