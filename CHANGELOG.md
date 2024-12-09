@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
+- Everything up to date
+
+## [1.0.24] - 2024-12-09
 ### Fixed
 - Refactor to-nectar type hint
 
@@ -43,3 +46,4 @@ All notable changes to this project will be documented in this file. This change
 [1.0.7]: https://github.com/plooney81/nectar-sql/compare/1.0.5...1.0.7
 [1.0.19]: https://github.com/plooney81/nectar-sql/compare/1.0.7...1.0.19
 [1.0.22]: https://github.com/plooney81/nectar-sql/compare/1.0.19...1.0.22
+[1.0.24]: https://github.com/plooney81/nectar-sql/compare/1.0.22...1.0.24
