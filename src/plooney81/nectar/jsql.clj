@@ -259,6 +259,5 @@
       (.getValue ^LongValue offset-expr)
       (throw (Exception. "Unsupported OffsetExpression type")))))
 
-
-(defn to-nectar [text]
-  (^[String] CCJSqlParserUtil/parse text))
+(defn to-nectar [^String text]
+  (CCJSqlParserUtil/parse  text))

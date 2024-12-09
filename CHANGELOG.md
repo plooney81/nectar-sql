@@ -2,7 +2,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
-- Everything up to date
+### Fixed
+- Refactor to-nectar type hint
 
 ## [1.0.22] - 2024-12-02
 ### Fixed
