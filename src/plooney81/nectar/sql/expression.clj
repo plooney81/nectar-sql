@@ -161,8 +161,7 @@
   [v]
   (if (and (string? v) (re-matches #"^'.*'$" v))
     (subs v 1 (dec (count v)))
-    v)
-  )
+    v))
 
 (defn cleanup-key
   "Tries to convert to an int if possible. If not trim-inner-quotes."
@@ -176,7 +175,6 @@
 (impl/register-operator! :->>)
 ;; https://github.com/seancorfield/honeysql/blob/develop/test/honey/sql/pg_ops_test.cljc
 (defmethod impl/expression JsonExpression [^JsonExpression jsql-expr]
-  (def my-jsql jsql-expr)
   (let [expression (impl/expression (jsql/get-expression jsql-expr))
         expression (if (vector? expression) (first expression) expression)
         {:keys [operator exprs]} (->> jsql-expr
