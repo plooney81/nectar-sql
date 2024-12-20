@@ -52,7 +52,7 @@
 
 (defn convert-from-item [honey jsql-select]
   (if-let [from-item (jsql/get-from-item jsql-select)]
-    (sql/from honey (jsql/convert-from from-item))
+    (sql/from honey (jsql/convert-table from-item))
     honey))
 
 (defn convert-join-items [honey jsql-select]
@@ -63,7 +63,7 @@
                       table                    (jsql/get-join-table join-item)
                       using                    (jsql/get-join-using-columns join-item)
                       on-expressions           (jsql/get-join-on-expressions join-item)
-                      converted-table          (jsql/convert-from table)
+                      converted-table          (jsql/convert-table table)
                       converted-using          (->> using
                                                     (map helpers/convert-column))
                       converted-on-expressions (->> on-expressions

@@ -14,6 +14,12 @@
     (.getClass jsql-select)))
 
 (defmulti
+  insert->honey
+  "Converts jsql-insert objects to honey-sql based on the class"
+  (fn [_honey jsql-insert]
+    (.getClass jsql-insert)))
+
+(defmulti
   expression
   "Converts a jsql expression to an alternative syntax that will ultimately be used to convert to honeysql"
   (fn [jsql-expr]

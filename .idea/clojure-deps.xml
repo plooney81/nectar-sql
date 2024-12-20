@@ -4,6 +4,10 @@
     <option name="dirTypeMappings">
       <set>
         <FolderState>
+          <option name="dirUrl" value="file://$PROJECT_DIR$/resources" />
+          <option name="type" value="RESOURCE" />
+        </FolderState>
+        <FolderState>
           <option name="dirUrl" value="file://$PROJECT_DIR$/test" />
           <option name="type" value="TEST_SOURCE" />
         </FolderState>

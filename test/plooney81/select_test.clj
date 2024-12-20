@@ -3,23 +3,11 @@
             [clojure.test :refer :all]
             [honey.sql :as honey]
             [honey.sql.helpers :as sql]
-            [plooney81.nectar.sql :as nsql]))
-
-(defn- honey->text [honeysql]
-  (-> (honey/format honeysql {:inline true :pretty true})
-      first
-      str/trim))
-
-(defn test-nectar [description raw-sql expected-honey]
-  (let [nectar (nsql/ripen raw-sql)]
-    (testing description
-      ;; tests that ripen outputs expected-honey
-      (is (= nectar expected-honey))
-      ;; tests that converting the nectar back to raw-sql gets us our original raw-sql
-      (is (= (honey->text nectar) raw-sql)))))
+            [plooney81.nectar.sql :as nsql]
+            [plooney81.test-helpers :as th]))
 
 (deftest simple-selects
-  (test-nectar
+  (th/test-nectar
     "simple-select"
     (str "SELECT *, 1, 'some-string', some_column\n"
          "FROM first_table\n"
@@ -27,7 +15,7 @@
     {:select [:* 1 "some-string" :some_column]
      :from   [:first_table]
      :where  [:= :something :another_thing]})
-  (test-nectar
+  (th/test-nectar
     "distinct selects"
     (str "SELECT DISTINCT col_1, col_2\n"
          "FROM first_table\n"
@@ -35,7 +23,7 @@
     {:select-distinct [:col_1 :col_2]
      :from            [:first_table]
      :where           [:= :something :another_thing]})
-  (test-nectar
+  (th/test-nectar
     "multi-column select"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -43,7 +31,7 @@
     {:select [:first_column :second_column]
      :from   [:first_table]
      :where  [:= :something :another_thing]})
-  (test-nectar
+  (th/test-nectar
     "AND clause with NULL handling"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -52,7 +40,7 @@
      :from   [:first_table]
      :where  [:and [:= :something :another_thing]
               [:= :something_else nil]]})
-  (test-nectar
+  (th/test-nectar
     "AND clause with NOT NULL handling"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -63,7 +51,7 @@
               [:not= :something_else nil]]}))
 
 (deftest logical-operators
-  (test-nectar
+  (th/test-nectar
     "One logical operator for more than two clauses"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -76,7 +64,7 @@
               [:= :something :another_thing]
               [:not= :something_else nil]
               [:= :one_last_thing nil]]})
-  (test-nectar
+  (th/test-nectar
     "OR Clause"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -86,7 +74,7 @@
      :from   [:first_table]
      :where  [:or [:= :something :another_thing]
               [:not= :something_else nil]]})
-  (test-nectar
+  (th/test-nectar
     "Mixing AND and OR Clauses"
     (str "SELECT first_column, second_column\n"
          "FROM first_table\n"
@@ -98,7 +86,7 @@
      :where  [:or [:and [:= :something :another_thing]
                    [:not= :something_else nil]]
               [:not= :one_more_thing nil]]})
-  (test-nectar
+  (th/test-nectar
     "Greater than/equals and less than/equals support"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -113,7 +101,7 @@
               [:> :ft.something :ft.blippity]
               [:<= :ft.something_else :ft.skippity]
               [:< :ft.something_once :ft.skoopity]]})
-  (test-nectar
+  (th/test-nectar
     "LIKE and ILIKE support"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -130,7 +118,7 @@
               [:not-ilike :ft.something_final "blippity"]]}))
 
 (deftest aliasing
-  (test-nectar
+  (th/test-nectar
     "Added an alias"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -140,13 +128,13 @@
      :from   [[:first_table :ft]]
      :where  [:and [:= :ft.something :ft.another_thing]
               [:not= :ft.something_else nil]]})
-  (test-nectar
+  (th/test-nectar
     "Select statement aliases"
     (str "SELECT ft.first_column AS my_first\n"
          "FROM first_table AS ft")
     {:select [[:ft.first_column :my_first]]
      :from   [[:first_table :ft]]})
-  (test-nectar
+  (th/test-nectar
     "Schema with an alias"
     (str "SELECT ft.first_column AS my_first\n"
          "FROM some_schema.first_table AS ft")
@@ -154,7 +142,7 @@
      :from   [[:some_schema.first_table :ft]]}))
 
 (deftest grouping-and-ordering
-  (test-nectar
+  (th/test-nectar
     "GROUP BY/ORDER BY support"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -166,7 +154,7 @@
      :where    [:ilike :ft.something :ft.another_thing],
      :group-by [:ft.first_group :ft.second_group],
      :order-by [[:ft.first_order :asc] [:ft.second_order :desc]]})
-  (test-nectar
+  (th/test-nectar
     "LIMIT/OFFSET support"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -180,7 +168,7 @@
      :offset 0}))
 
 (deftest joins
-  (test-nectar
+  (th/test-nectar
     "JOIN Support"
     (str "SELECT ft.first_column, st.second_column\n"
          "FROM first_table AS ft\n"
@@ -220,7 +208,7 @@
         outer sql/outer-join
         cross sql/cross-join
         simple sql/join)))
-  (test-nectar
+  (th/test-nectar
     "Set operation list support (UNION, INTERSECT, EXCEPT)"
     (str "SELECT ft.first_column, ft.second_column FROM first_table AS ft "
          "UNION "
@@ -238,7 +226,7 @@
                              {:select [:ft.first_column :ft.second_column], :from [[:fourth_table :ft]]}]}
                 {:select [:fft.first_column :fft.second_column], :from [[:fifth_table :fft]]}],
      :order-by [[:fft.first_column :asc]]})
-  (test-nectar
+  (th/test-nectar
     "Joins with USING statement"
     (str "SELECT *\n"
          "FROM employees\n"
@@ -250,7 +238,7 @@
                   [:compensation :c] [:using :c.department_id :c.employee_id]]}))
 
 (deftest mathematical-operations
-  (test-nectar
+  (th/test-nectar
     "Math Things"
     (str "SELECT (first_column - second_column) / 2 AS something, "
          "(first_column + second_column) * ((third_column - fourth_column) / fifth_column) AS most_math, "
@@ -260,7 +248,7 @@
               [[:* [:+ :first_column :second_column] [:/ [[:- :third_column :fourth_column]] :fifth_column]] :most_math]
               [[:% :first_column :second_column] :modulo_example]],
      :from   [[:first_table :ft]]})
-  (test-nectar
+  (th/test-nectar
     "Math with nested operators"
     (str "SELECT (first_column - second_column) / 2 AS something, "
          "first_column + ((second_column + third_column) / fourth_column) AS another\n"
@@ -280,14 +268,14 @@
         positive {:select [[[:+ 1 42] :positive_addition]]}
         bitwise {:select [[[:raw "~1"] :bitwise_example]]})
       (are [sql-string converted-sql-string]
-        (= (honey->text (nsql/ripen sql-string)) converted-sql-string)
+        (= (th/honey->text (nsql/ripen sql-string)) converted-sql-string)
         regex regex
         negative negative
         positive "SELECT 1 + 42 AS positive_addition"       ;; Removes the unnecessary +
         bitwise bitwise))))
 
 (deftest functions
-  (test-nectar
+  (th/test-nectar
     "Aggregate functions"
     (str "SELECT AVG(ft.first_column) AS first_column_avg\n"
          "FROM first_table AS ft")
@@ -310,7 +298,7 @@
         min-string [[[:min :*] :some_min]]
         sum-string [[[:sum :*] :some_sum]])
       (are [sql-string converted-sql-string]
-        (= (honey->text (nsql/ripen sql-string)) converted-sql-string)
+        (= (th/honey->text (nsql/ripen sql-string)) converted-sql-string)
         avg-string avg-string
         count-string count-string
         max-string max-string
@@ -335,7 +323,7 @@
         trim [[[:trim :first_name] :trim_first]]
         trim-2 [[[:trim :!leading "x" :!from :some_table] :alternative_trim]])
       (are [sql-string converted-sql-string]
-        (= (honey->text (nsql/ripen sql-string)) converted-sql-string)
+        (= (th/honey->text (nsql/ripen sql-string)) converted-sql-string)
         concat concat
         length length
         lower lower
@@ -355,12 +343,12 @@
         date-part {:select [[[:date_part "year" :date_of_birth]]] :from [:table_1]}
         age {:select [[[:age :date_of_birth]]] :from [:table_1]})
       (are [sql-string converted-sql-string]
-        (= (honey->text (nsql/ripen sql-string)) converted-sql-string)
+        (= (th/honey->text (nsql/ripen sql-string)) converted-sql-string)
         current-date current-date
         current-time current-time
         date-part date-part
         age age)))
-  (test-nectar
+  (th/test-nectar
     "Math Functions"
     (str "SELECT ABS(-42), "
          "CEIL(4.3) AS my_ceil, "
@@ -376,7 +364,7 @@
               [:%random]
               [:%random :random_2]],
      :from   [[:first_table :ft]]})
-  (test-nectar
+  (th/test-nectar
     "JSON Functions"
     (str "SELECT JSONB_EXISTS(t1.data, 'key') AS jf1, "
          "JSONB_EXTRACT_PATH(t1.data, 'key', 'subkey') AS jf2, "
@@ -386,7 +374,7 @@
               [[:jsonb_extract_path :t1.data "key" "subkey"] :jf2]
               [[:to_json :t1.row] :jf3]],
      :from   [[:table_1 :t1]]})
-  (test-nectar
+  (th/test-nectar
     "Analytical Expressions"
     (str "SELECT id, "
          "AVG(salary) OVER (PARTITION BY department ORDER BY designation ASC) AS average, "
@@ -406,11 +394,11 @@
       (is (= (nsql/ripen sql-string)
              {:select [[[:raw "percentile_cont(0.5) WITHIN GROUP (ORDER BY salary) OVER (PARTITION BY department )"] :median_salary]],
               :from   [:employee]}))
-      (is (= (honey->text (nsql/ripen sql-string))
+      (is (= (th/honey->text (nsql/ripen sql-string))
              (str "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY salary) "
                   "OVER (PARTITION BY department ) AS median_salary\n"
                   "FROM employee")))))
-  (test-nectar
+  (th/test-nectar
     "Window Functions And Analytical Expressions"
     (str "SELECT name, "
          "ROW_NUMBER() OVER (ORDER BY e.salary ASC) AS salary_row, "
@@ -423,7 +411,7 @@
                 [:%rank {:order-by [[:e.salary :asc]]} :salary_rank]
                 [:%dense_rank {:order-by [[:e.salary :asc]]} :salary_d_rank]]]],
      :from   [[:employees :e]]})
-  (test-nectar
+  (th/test-nectar
     "Conditional Functions"
     (str "SELECT COALESCE(middle_name, 'N/A') AS new_middle, "
          "NULLIF(column1, column2)\n"
@@ -431,7 +419,7 @@
     {:select [[[:coalesce :middle_name "N/A"] :new_middle]
               [[:nullif :column1 :column2]]]
      :from   [:employees]})
-  (test-nectar
+  (th/test-nectar
     "Array Functions"
     (str "SELECT ARRAY_AGG(e.salary) AS sal_agg, "
          "UNNEST(e.array_column) AS unnest_sal, "
@@ -441,7 +429,7 @@
               [[:unnest :e.array_column] :unnest_sal]
               [[:array_append :e.array_column "new_element"] :new_array_column]],
      :from   [[:employees :e]]})
-  (test-nectar
+  (th/test-nectar
     "Geometric Functions"
     (str "SELECT POINT(1, 2) AS new_point, "
          "LINE(POINT(1, 2), POINT(3, 4)) AS new_line_segment, "
@@ -465,12 +453,12 @@
         to-int-type-conv to-int-honey
         to-text-type-conv to-text-honey)
       (are [sql-string converted-sql-string]
-        (= (honey->text (nsql/ripen sql-string)) converted-sql-string)
+        (= (th/honey->text (nsql/ripen sql-string)) converted-sql-string)
         to-int-fn to-int-fn
         to-text-fn to-text-fn
         to-int-type-conv to-int-fn
         to-text-type-conv to-text-fn)))
-  (test-nectar
+  (th/test-nectar
     "Network Address Functions"
     (str "SELECT INET('192.168.1.1') AS ipv4_address, "
          "INET('192.168.1') << INET('192.168.1.0/24') AS subnet_query, "
@@ -480,7 +468,7 @@
               [[:<< [:inet "192.168.1"] [:inet "192.168.1.0/24"]] :subnet_query]
               [[:cidr "2001:db8::"] :host_address]],
      :from   [[:something :s]]})
-  (test-nectar
+  (th/test-nectar
     "Full-text search functions"
     (str "SELECT TO_TSVECTOR('english', 'The quick brown fox jumps over the lazy dog') AS tokens, "
          "TO_TSQUERY('english', 'quick & fox') AS query_output, "
@@ -490,7 +478,7 @@
               [[:to_tsquery "english" "quick & fox"] :query_output]
               [[:plainto_tsquery "english" "The quick brown fox"] :plain_ts_query_output]],
      :from   [[:something :s]]})
-  (test-nectar
+  (th/test-nectar
     "MISC Functions"
     (str "SELECT VERSION() AS v, "
          "PG_BACKEND_PID() AS pid\n"
@@ -498,7 +486,7 @@
     {:select [[:%version :v] [:%pg_backend_pid :pid]], :from [[:something :s]]}))
 
 (deftest windowing
-  (test-nectar
+  (th/test-nectar
     "Trickier window example"
     (str "SELECT employee_id, employee_name, quarter, year, sales_amount, "
          "SUM(sales_amount) OVER ("
@@ -517,7 +505,7 @@
                :current_and_previous_2]
               [[:raw "SUM(value) OVER (ORDER BY value RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)"] :running_total]],
      :from   [:employer_performance]})
-  (test-nectar
+  (th/test-nectar
     "Using the actual WINDOW keyword"
     (str "SELECT department, employee, salary, "
          "SUM(salary) OVER rolling_window AS rolling_sum, "
@@ -536,7 +524,7 @@
               :department_window {:partition-by [:department]}]}))
 
 (deftest cte-and-subqueries
-  (test-nectar
+  (th/test-nectar
     "Regular CTE"
     (str "WITH sales AS (SELECT employee_id, SUM(sales_amount) AS total_sales FROM sales GROUP BY employee_id), "
          "top_sales AS (SELECT employee_id, total_sales FROM sales WHERE total_sales > 10000)\n"
@@ -546,7 +534,7 @@
      :select     [:e.employee_name :t.total_sales],
      :from       [[:employees :e]],
      :inner-join [[:top_sales :t] [:= :e.employee_id :t.employee_id]]})
-  (test-nectar
+  (th/test-nectar
     "Recursive CTE"
     (str "WITH RECURSIVE sales AS (SELECT employee_id, SUM(sales_amount) AS total_sales FROM sales GROUP BY employee_id), "
          "top_sales AS (SELECT employee_id, total_sales FROM sales WHERE total_sales > 10000)\n"
@@ -556,7 +544,7 @@
      :select         [:e.employee_name :t.total_sales],
      :from           [[:employees :e]],
      :inner-join     [[:top_sales :t] [:= :e.employee_id :t.employee_id]]})
-  (test-nectar
+  (th/test-nectar
     "Nested Sub-query"
     (str "SELECT employee_id, first_name, last_name, department_id, "
          "("
@@ -574,18 +562,18 @@
      :from   [:employees]}))
 
 (deftest more-operators
-  (test-nectar
+  (th/test-nectar
     "String operators"
     (str "SELECT title || ' by ' || author || ' publisher: ' || publisher AS full_title\n"
          "FROM books")
     {:select [[[:|| :title " by " :author " publisher: " :publisher] :full_title]]
      :from   [:books]})
-  (test-nectar
+  (th/test-nectar
     "IN operator"
     (str "SELECT *\nFROM orders\nWHERE (status IN ('pending', 'shipped', 'delivered')) AND (status NOT IN ('bloop', 'skoop'))")
     {:select [:*], :from [:orders], :where [:and [:in :status ["pending" "shipped" "delivered"]]
                                             [:not-in :status ["bloop" "skoop"]]]})
-  (test-nectar
+  (th/test-nectar
     "BETWEEN and NOT BETWEEN operators"
     (str "SELECT *\nFROM orders\nWHERE amount BETWEEN 100 AND 500 AND amount NOT BETWEEN 1 AND 5")
     {:select [:*]
@@ -593,13 +581,13 @@
      :where  [:and
               [:between :amount 100 500]
               [:not-between :amount 1 5]]})
-  (test-nectar
+  (th/test-nectar
     "NOT operator"
     (str "SELECT *\nFROM orders\nWHERE NOT something")
     {:select [:*], :from [:orders], :where [:not :something]}))
 
 (deftest json-operators
-  (test-nectar
+  (th/test-nectar
     "Selection operators"
     (str "SELECT json_column -> 'name', "
          "json_column -> 'name' -> 'another', "
@@ -618,23 +606,23 @@
              {:select [[[:? :json_column "name"]]
                        [[:?| :json_column_2 "name"]]
                        [[:?& :json_column_3 "name"]]]}))
-      (is (= (honey->text (nsql/ripen sql-string))
+      (is (= (th/honey->text (nsql/ripen sql-string))
              (str "SELECT json_column ?? 'name', "
                   "json_column_2 ??| 'name', "
                   "json_column_3 ??& 'name'")))))
-  (test-nectar
+  (th/test-nectar
     "Containment operators"
     (str "SELECT json_column @> '{\"age\": 30}', "
          "json_column <@ '{\"age\": 30}'")
     {:select [[[(keyword "@>") :json_column "{\"age\": 30}"]]
               [[(keyword "<@") :json_column "{\"age\": 30}"]]]})
-  (test-nectar
+  (th/test-nectar
     "Path operators"
     (str "SELECT (json_column #> '{person, name}') AS name_as_json, "
          "(json_column #>> '{person, name}') AS name_as_text")
     {:select [[[[:#> :json_column "{person, name}"]] :name_as_json]
               [[[:#>> :json_column "{person, name}"]] :name_as_text]]})
-  (test-nectar
+  (th/test-nectar
     "Deletion operators"
     (str "SELECT json_column - 'age'")
     {:select [[[:- :json_column "age"]]]})

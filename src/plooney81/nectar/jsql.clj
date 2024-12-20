@@ -2,6 +2,7 @@
   (:import (net.sf.jsqlparser.expression.operators.relational LikeExpression)
            (net.sf.jsqlparser.parser CCJSqlParserUtil)
            (net.sf.jsqlparser.statement.create.table ColDataType)
+           (net.sf.jsqlparser.statement.insert Insert)
            (net.sf.jsqlparser.statement.select
              FromItem GroupByElement Join Limit Offset OrderByElement PlainSelect SelectItem SetOperationList WithItem)
            (net.sf.jsqlparser.expression
@@ -85,19 +86,41 @@
   (when-let [table (.getTable column)]
     (get-name table)))
 
-(defn get-schema [^FromItem from-item]
-  (.getSchemaName from-item))
+(defmethod get-alias Insert [^Insert jsql-insert]
+  (when-let [table (.getTable jsql-insert)]
+    (get-name table)))
 
-(defn convert-from [^FromItem from-item]
-  (let [alias  (get-alias from-item)
-        schema (get-schema from-item)]
+(defmulti get-schema #(.getClass %))
+
+(defn generic-get-schema [jsql-item]
+  (.getSchemaName jsql-item))
+
+(defmethod get-schema :default [jsql]
+  (try (generic-get-schema jsql)
+       (catch Exception _e
+         (throw
+           (IllegalArgumentException.
+             (str "Unsupported get-schema for Type: " (.getClass jsql)))))))
+
+(defmulti convert-table #(.getClass %))
+
+(defn generic-table-conversion [jsql-item]
+  (let [alias  (get-alias jsql-item)
+        schema (get-schema jsql-item)]
     (if alias
-      (let [name  (get-name from-item)
+      (let [name  (get-name jsql-item)
             table (if schema
                     (str schema "." name)
                     name)]
         [(keyword table) (keyword alias)])
-      (keyword (.toString from-item)))))
+      (keyword (.toString jsql-item)))))
+
+(defmethod convert-table :default [jsql]
+  (try (generic-table-conversion jsql)
+       (catch Exception e
+         (throw
+           (IllegalArgumentException.
+             (str "Unsupported convert-table for Type: " (.getClass jsql)))))))
 
 (defn get-join-items [^PlainSelect jsql-select]
   (.getJoins jsql-select))
