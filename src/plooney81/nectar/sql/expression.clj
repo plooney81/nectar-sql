@@ -11,7 +11,7 @@
              Between EqualsTo GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CastExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue)
+             CaseExpression CastExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -147,6 +147,21 @@
 
 (defmethod impl/expression ColDataType [^ColDataType jsql-expr]
   (helpers/convert-data-type (jsql/get-data-type jsql-expr)))
+
+(defmethod impl/expression CaseExpression [^CaseExpression jsql-expr]
+  (let [switch-expr  (.getSwitchExpression jsql-expr)
+        when-clauses (.getWhenClauses jsql-expr)
+        else-expr    (.getElseExpression jsql-expr)
+        switch       (when switch-expr (impl/expression->honey switch-expr))
+        when-pairs   (mapcat (fn [^WhenClause wc]
+                               [(impl/expression->honey (.getWhenExpression wc))
+                                (impl/expression->honey (.getThenExpression wc))])
+                             when-clauses)
+        case-args    (cond-> []
+                       switch    (conj switch)
+                       true      (concat when-pairs)
+                       else-expr (concat [:else (impl/expression->honey else-expr)]))]
+    (into [:case] case-args)))
 
 (defmethod impl/expression CastExpression [^CastExpression jsql-expr]
   (let [left-expression (impl/expression (jsql/get-left-expression jsql-expr))
