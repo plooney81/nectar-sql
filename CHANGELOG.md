@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
-## [1.0.28] - 2026-04-27
+## [1.0.31] - 2026-04-27
 ### Added
 - Support for parsing and converting SQL `INSERT` statements (single row and multi-row `VALUES`)
 
@@ -56,4 +56,4 @@ All notable changes to this project will be documented in this file. This change
 [1.0.22]: https://github.com/plooney81/nectar-sql/compare/1.0.19...1.0.22
 [1.0.24]: https://github.com/plooney81/nectar-sql/compare/1.0.22...1.0.24
 [1.0.27]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.27
-[1.0.28]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.28
+[1.0.31]: https://github.com/plooney81/nectar-sql/compare/1.0.27...1.0.31
