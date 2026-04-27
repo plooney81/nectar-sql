@@ -7,7 +7,7 @@ hummingbirds. It serves as the raw material for honey.
 
 `nectar-sql`: Converts raw sql strings into honey sql. nectar-sql takes a raw sql string, parses it (using [JSqlParser](JSqlParser)) and converts it into [honeysql](https://github.com/seancorfield/honeysql)
 
-`nectar-sql` is currently a work in progress and, at present, can be expected to handle a wide variety of `SELECT` queries.
+`nectar-sql` is currently a work in progress and, at present, can be expected to handle a wide variety of `SELECT` and `INSERT` queries.
 
 ## Try It from Your REPL
 
@@ -82,8 +82,8 @@ Your library will be deployed to net.clojars.plooney81/nectar-sql on clojars.org
 ## Support
 
 - Scope:
-    - We currently only support `SELECT` functionality
-    - We hope to support `INSERT`, `UPDATE`, `DELETE` in the future
+    - We currently support `SELECT` and `INSERT` functionality
+    - We hope to support `UPDATE` and `DELETE` in the future
 
 - nectar-sql relies heavily on [JSQLParser](JSqlParser)
     - JSQLParser doesn't currently support a few pieces of functionality, like Implicit Casting in Postgres
