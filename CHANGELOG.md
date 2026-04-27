@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - Support for parsing and converting SQL `INSERT` statements (single row and multi-row `VALUES`)
 
+## [1.0.27] - 2026-04-27
+### Fixed
+- Support for `CASE WHEN` expressions in SELECT items
+
 ## [1.0.24] - 2024-12-09
 ### Fixed
 - Refactor to-nectar type hint
@@ -51,4 +55,5 @@ All notable changes to this project will be documented in this file. This change
 [1.0.19]: https://github.com/plooney81/nectar-sql/compare/1.0.7...1.0.19
 [1.0.22]: https://github.com/plooney81/nectar-sql/compare/1.0.19...1.0.22
 [1.0.24]: https://github.com/plooney81/nectar-sql/compare/1.0.22...1.0.24
+[1.0.27]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.27
 [1.0.28]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.28
