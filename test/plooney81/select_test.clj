@@ -586,6 +586,23 @@
     (str "SELECT *\nFROM orders\nWHERE NOT something")
     {:select [:*], :from [:orders], :where [:not :something]}))
 
+(deftest case-when-expressions
+  (testing "Searched CASE WHEN with equality and ELSE"
+    (let [sql    "SELECT CASE WHEN a = 1 THEN 'one' ELSE 'other' END AS val"
+          honey  {:select [[[:case [:= :a 1] "one" :else "other"] :val]]}]
+      (is (= (nsql/ripen sql) honey))
+      (is (= (honey->text (nsql/ripen sql)) sql))))
+  (testing "Searched CASE WHEN with IS NOT NULL (issue reproduction)"
+    (let [sql   "SELECT CASE WHEN title IS NOT NULL THEN title ELSE 'Unknown' END AS display_title"
+          honey {:select [[[:case [:not= :title nil] :title :else "Unknown"] :display_title]]}]
+      (is (= (nsql/ripen sql) honey))
+      (is (= (honey->text (nsql/ripen sql)) sql))))
+  (testing "Multiple WHEN clauses without ELSE"
+    (let [sql   "SELECT CASE WHEN score >= 90 THEN 'A' WHEN score >= 80 THEN 'B' END AS grade"
+          honey {:select [[[:case [:>= :score 90] "A" [:>= :score 80] "B"] :grade]]}]
+      (is (= (nsql/ripen sql) honey))
+      (is (= (honey->text (nsql/ripen sql)) sql)))))
+
 (deftest json-operators
   (th/test-nectar
     "Selection operators"
