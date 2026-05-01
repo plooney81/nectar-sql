@@ -39,4 +39,6 @@
 
   (around-the-horn "INSERT INTO users AS u (id, username, email) VALUES (1, 'john_doe', 'john@example.com'), (2, 'admin', 'admin@example.com')")
 
+  (around-the-horn "SELECT CASE WHEN title_ref.title_id IS NOT NULL THEN title_ref.title_name ELSE person.manual_title END AS title FROM person LEFT JOIN title_reference title_ref ON person.title_id = title_ref.title_id;")
+
   )
