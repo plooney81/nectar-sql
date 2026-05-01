@@ -23,8 +23,10 @@
   (impl/jsql->honey-adapter {} (jsql/get-plain-select jsql-expr)))
 
 (defmethod impl/expression ParenthesedExpressionList [jsql-expr]
-  (->> jsql-expr
-       (mapv #(impl/expression %))))
+  (let [items (mapv #(impl/expression %) jsql-expr)]
+    (if (= 1 (count items))
+      (first items)
+      items)))
 
 (defn- get-left-and-right [jsql-expr]
   (let [left-expression  (impl/expression (jsql/get-left-expression jsql-expr))
@@ -189,19 +191,32 @@
 (impl/register-operator! :->)
 (impl/register-operator! :->>)
 ;; https://github.com/seancorfield/honeysql/blob/develop/test/honey/sql/pg_ops_test.cljc
+(defn- jsql-value->str [v]
+  (if (instance? StringValue v)
+    (.getValue ^StringValue v)
+    (str v)))
+
+(defn- expand-json-key
+  "jsqlparser 5.x merges chained accesses like -> 'a' -> 'b' into a single
+  ident key string \"'a'->'b'\". Splits it back into individual keys."
+  [k]
+  (if (re-find #"'->>'|'->'" k)
+    (->> (re-seq #"'([^']*)'" k) (mapv second))
+    [(cleanup-key k)]))
+
 (defmethod impl/expression JsonExpression [^JsonExpression jsql-expr]
   (let [expression (impl/expression (jsql/get-expression jsql-expr))
         expression (if (vector? expression) (first expression) expression)
         {:keys [operator exprs]} (->> jsql-expr
                                       (.getIdentList)
-                                      (map (fn [ident]
-                                             {:operator (keyword (.getValue ident))
-                                              :exprs    (cleanup-key (.getKey ident))}))
+                                      (mapcat (fn [ident]
+                                                (let [op   (keyword (jsql-value->str (.getValue ident)))
+                                                      keys (expand-json-key (jsql-value->str (.getKey ident)))]
+                                                  (mapv (fn [k] {:operator op :exprs k}) keys))))
                                       (group-by :operator)
                                       (map (fn [[k v]]
                                              {:operator k
-                                              :exprs    (->> v
-                                                             (mapv :exprs))}))
+                                              :exprs    (mapv :exprs v)}))
                                       (apply merge))
         inner (into [operator expression] exprs)]
     [inner]))
