@@ -1,10 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
-- Everything up to date
-
-## [1.0.32] - 2026-05-01
+## [Unreleased] - TBD
 ### Changed
 - Upgraded jsqlparser to 5.3 with fixes for breaking API changes (JSON expression ident API, chained key merging, `ParenthesedExpressionList` single-element unwrapping)
 - Bumped all dependencies (HoneySQL 2.7.1368, Clojure 1.12.0, tools.build 0.10.9)
