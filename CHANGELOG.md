@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. This change
 - CI now auto-deploys to Clojars on push to `main`; tests run on all branches/PRs
 
 ### Fixed
+- `MATERIALIZED` keyword on CTEs was silently dropped; now correctly produces `[:materialized ...]` in HoneySQL output
 - Version is now read from a `version` file instead of computed via `git-count-revs`, eliminating the circular versioning problem
 
 ## [1.0.31] - 2026-04-27

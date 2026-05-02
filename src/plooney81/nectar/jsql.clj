@@ -41,6 +41,9 @@
 (defn is-recursive [^WithItem with-item]
   (.isRecursive with-item))
 
+(defn is-materialized? [^WithItem with-item]
+  (.isMaterialized with-item))
+
 (defn get-parameters [^Function jsql]
   (.getParameters jsql))
 

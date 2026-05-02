@@ -16,9 +16,13 @@
                            sql/with)]
       (->> with-items
            (reduce (fn [honey-sql ^WithItem with-item]
-                     (let [alias  (helpers/keywordize-alias with-item)
-                           select (jsql/get-select-in-paren-select with-item)]
-                       (with-fn honey-sql [alias (impl/select->honey {} select)])))
+                     (let [alias    (helpers/keywordize-alias with-item)
+                           select   (jsql/get-select-in-paren-select with-item)
+                           subquery (impl/select->honey {} select)
+                           wrapped  (if (jsql/is-materialized? with-item)
+                                      [:materialized subquery]
+                                      subquery)]
+                       (with-fn honey-sql [alias wrapped])))
                    honey)))
     honey))
 
