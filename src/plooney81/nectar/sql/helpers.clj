@@ -1,5 +1,6 @@
 (ns plooney81.nectar.sql.helpers
   (:require [clojure.string :as str]
+            [honey.sql.helpers :as sql]
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.impl :as impl])
   (:import (net.sf.jsqlparser.expression Function)))
@@ -89,3 +90,46 @@
     (if named-parameters
       (handle-named-params named-parameters)
       (generate-fn-params parameters))))
+
+(defn convert-join-list [honey join-items]
+  (->> join-items
+       (map (fn [join-item]
+              (let [type                     (jsql/determine-join-type join-item)
+                    table                    (jsql/get-join-table join-item)
+                    using                    (jsql/get-join-using-columns join-item)
+                    on-expressions           (jsql/get-join-on-expressions join-item)
+                    converted-table          (jsql/convert-table table)
+                    converted-using          (->> using (map convert-column))
+                    converted-on-expressions (->> on-expressions (map impl/expression->honey))]
+                (cond-> {:type  type
+                         :table converted-table
+                         :on    converted-on-expressions}
+                  (not (empty? converted-using)) (assoc :using converted-using)))))
+       (reduce (fn [honey-acc join-item]
+                 (let [{:keys [type table using on]} join-item
+                       join-fn (case type
+                                 :inner sql/inner-join
+                                 :left  sql/left-join
+                                 :right sql/right-join
+                                 :full  sql/full-join
+                                 :cross sql/cross-join
+                                 :outer sql/outer-join
+                                 sql/join)]
+                   (if using
+                     (join-fn honey-acc table (into [:using] using))
+                     (apply join-fn honey-acc table on))))
+               honey)))
+
+(defn convert-with-list [honey with-items]
+  (let [any-recursive? (some jsql/is-recursive with-items)
+        with-fn        (if any-recursive? sql/with-recursive sql/with)]
+    (->> with-items
+         (reduce (fn [honey-acc with-item]
+                   (let [alias    (keywordize-alias with-item)
+                         select   (jsql/get-select-in-paren-select with-item)
+                         subquery (impl/select->honey {} select)
+                         wrapped  (if (jsql/is-materialized? with-item)
+                                    [:materialized subquery]
+                                    subquery)]
+                     (with-fn honey-acc [alias wrapped])))
+                 honey))))

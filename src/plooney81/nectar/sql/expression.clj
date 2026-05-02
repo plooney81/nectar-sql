@@ -8,10 +8,10 @@
              Addition BitwiseAnd BitwiseLeftShift BitwiseOr BitwiseRightShift Concat Division Modulo Multiplication Subtraction)
            (net.sf.jsqlparser.expression.operators.conditional AndExpression OrExpression)
            (net.sf.jsqlparser.expression.operators.relational
-             Between EqualsTo GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
+             Between EqualsTo ExistsExpression GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CaseExpression CastExpression CollateExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
+             CaseExpression CastExpression CollateExpression DoubleValue JsonExpression NotExpression SignedExpression TimeKeyExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -132,6 +132,13 @@
                             (keyword (str "not-" like-type))
                             (keyword like-type))]
     (handle-regular-operation actual-type (get-left-and-right jsql-expr))))
+
+(defmethod impl/expression ExistsExpression [^ExistsExpression jsql-expr]
+  (let [subquery (impl/expression->honey (.getRightExpression jsql-expr))
+        exists   [:exists subquery]]
+    (if (jsql/is-not? jsql-expr)
+      [:not exists]
+      exists)))
 
 (defmethod impl/expression IsNullExpression [jsql-expr]
   (let [is-not?   (jsql/is-not? jsql-expr)
@@ -272,6 +279,9 @@
 
 (defmethod impl/expression CollateExpression [^CollateExpression jsql-expr]
   (jsql-expr->raw-honey jsql-expr))
+
+(defmethod impl/expression TimeKeyExpression [^TimeKeyExpression jsql-expr]
+  [:raw (.getStringValue jsql-expr)])
 
 (defmethod impl/expression Column [jsql-expr]
   (helpers/convert-column jsql-expr))

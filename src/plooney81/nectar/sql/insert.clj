@@ -3,7 +3,8 @@
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.helpers :as helpers]
             [plooney81.nectar.sql.impl :as impl])
-  (:import (net.sf.jsqlparser.statement.insert Insert)))
+  (:import (net.sf.jsqlparser.statement.insert Insert)
+           (net.sf.jsqlparser.statement.select Values)))
 
 (defn get-columns [jsql-insert]
   (when-let [columns (.getColumns jsql-insert)]
@@ -32,10 +33,16 @@
     (sql/values honey values)
     honey))
 
+(defn- handle-body [honey ^Insert jsql-insert]
+  (let [select-body (.getSelect jsql-insert)]
+    (if (instance? Values select-body)
+      (handle-values honey jsql-insert)
+      (merge honey (impl/select->honey {} select-body)))))
+
 (defmethod impl/insert->honey Insert [honey ^Insert jsql-insert]
   (-> honey
       (handle-into jsql-insert)
-      (handle-values jsql-insert)))
+      (handle-body jsql-insert)))
 
 
 (defmethod impl/insert->honey :default [_honey jsql-insert]

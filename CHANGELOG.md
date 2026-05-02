@@ -6,7 +6,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [1.0.32] - TBD
 ### Added
-- Support for parsing and converting SQL `UPDATE` statements (SET, WHERE, FROM, ORDER BY, LIMIT)
+- Support for parsing and converting SQL `DELETE` statements (WHERE, ORDER BY, LIMIT)
+- Support for parsing and converting SQL `UPDATE` statements (SET, WHERE, FROM, JOINs, CTEs, ORDER BY, LIMIT)
+- Support for `INSERT … SELECT` and `INSERT … SELECT … UNION ALL`
+- Support for `EXISTS` and `NOT EXISTS` expressions
 - Support for `COLLATE` expressions
 - Added `Makefile` with `test`, `repl`, `ci`, `build`, `deploy`, `release`, `clean` targets
 
@@ -16,6 +19,8 @@ All notable changes to this project will be documented in this file. This change
 - CI now auto-deploys to Clojars on push to `main`; tests run on all branches/PRs
 
 ### Fixed
+- `CURRENT_TIMESTAMP` and other time key expressions threw `IllegalArgumentException`; now rendered as raw SQL
+- `UPDATE` statements with CTEs (`WITH`) or `JOIN` clauses were silently incomplete; both are now handled correctly
 - `MATERIALIZED` keyword on CTEs was silently dropped; now correctly produces `[:materialized ...]` in HoneySQL output
 - Version is now read from a `version` file instead of computed via `git-count-revs`, eliminating the circular versioning problem
 
