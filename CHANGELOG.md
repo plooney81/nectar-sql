@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [1.0.32] - TBD
 ### Added
+- Support for parsing and converting SQL `UPDATE` statements (SET, WHERE, FROM, ORDER BY, LIMIT)
 - Support for `COLLATE` expressions
 - Added `Makefile` with `test`, `repl`, `ci`, `build`, `deploy`, `release`, `clean` targets
 

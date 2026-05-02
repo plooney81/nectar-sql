@@ -7,9 +7,11 @@
             [plooney81.nectar.sql.insert]
             [plooney81.nectar.sql.select]
             [plooney81.nectar.sql.select-item]
-            [plooney81.nectar.sql.set-operation])
+            [plooney81.nectar.sql.set-operation]
+            [plooney81.nectar.sql.update])
   (:import (net.sf.jsqlparser.statement.insert Insert)
-           (net.sf.jsqlparser.statement.select Select)))
+           (net.sf.jsqlparser.statement.select Select)
+           (net.sf.jsqlparser.statement.update Update)))
 
 (defmethod impl/jsql->honey-adapter :default [_honey jsql]
   (throw (IllegalArgumentException.
@@ -20,6 +22,9 @@
 
 (defmethod impl/jsql->honey-adapter Insert [honey jsql]
   (impl/insert->honey honey jsql))
+
+(defmethod impl/jsql->honey-adapter Update [honey jsql]
+  (impl/update->honey honey jsql))
 
 (defn ripen
   "Process of turning nectar into honey. Accepts a raw-sql string and returns a honeysql map."
@@ -42,5 +47,9 @@
   (around-the-horn "SELECT CASE WHEN title_ref.title_id IS NOT NULL THEN title_ref.title_name ELSE person.manual_title END AS title FROM person LEFT JOIN title_reference title_ref ON person.title_id = title_ref.title_id;")
 
   (around-the-horn "SELECT DISTINCT col_name COLLATE latin1_bin FROM X")
+
+  (around-the-horn "WITH stuff AS MATERIALIZED (SELECT * FROM table) SELECT * FROM stuff")
+
+  (ripen "WITH stuff AS MATERIALIZED (SELECT * FROM table) SELECT * FROM stuff")
 
   )
