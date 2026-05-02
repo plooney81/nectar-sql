@@ -646,3 +646,8 @@
 
 
   )
+
+(deftest collate-expressions
+  (testing "COLLATE as select item"
+    (let [sql "SELECT name COLLATE utf8 FROM users"]
+      (is (some? (nsql/ripen sql))))))

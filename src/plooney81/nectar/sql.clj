@@ -30,7 +30,7 @@
   (do
     (require '[honey.sql :as honey])
     (defn around-the-horn [sql-string]
-      (-> (ripen sql-string)
+      (-> (plooney81.nectar.sql/ripen sql-string)
           (honey/format {:inline true :pretty true}))))
 
   (around-the-horn "SELECT json_column -> 'name' -> 'another'")
@@ -40,5 +40,7 @@
   (around-the-horn "INSERT INTO users AS u (id, username, email) VALUES (1, 'john_doe', 'john@example.com'), (2, 'admin', 'admin@example.com')")
 
   (around-the-horn "SELECT CASE WHEN title_ref.title_id IS NOT NULL THEN title_ref.title_name ELSE person.manual_title END AS title FROM person LEFT JOIN title_reference title_ref ON person.title_id = title_ref.title_id;")
+
+  (around-the-horn "SELECT DISTINCT col_name COLLATE latin1_bin FROM X")
 
   )

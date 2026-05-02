@@ -1,12 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased] - TBD
+## [Unreleased]
+- Everything up to date
+
+## [1.0.32] - TBD
+### Added
+- Support for `COLLATE` expressions
+- Added `Makefile` with `test`, `repl`, `ci`, `build`, `deploy`, `release`, `clean` targets
+
 ### Changed
 - Upgraded jsqlparser to 5.3 with fixes for breaking API changes (JSON expression ident API, chained key merging, `ParenthesedExpressionList` single-element unwrapping)
 - Bumped all dependencies (HoneySQL 2.7.1368, Clojure 1.12.0, tools.build 0.10.9)
 - CI now auto-deploys to Clojars on push to `main`; tests run on all branches/PRs
-- Added `Makefile` with `test`, `repl`, `ci`, `build`, `deploy`, `release`, `clean` targets
+
 ### Fixed
 - Version is now read from a `version` file instead of computed via `git-count-revs`, eliminating the circular versioning problem
 
@@ -63,3 +70,4 @@ All notable changes to this project will be documented in this file. This change
 [1.0.24]: https://github.com/plooney81/nectar-sql/compare/1.0.22...1.0.24
 [1.0.27]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.27
 [1.0.31]: https://github.com/plooney81/nectar-sql/compare/1.0.27...1.0.31
+[1.0.32]: https://github.com/plooney81/nectar-sql/compare/1.0.31...1.0.32

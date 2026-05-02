@@ -11,7 +11,7 @@
              Between EqualsTo GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CaseExpression CastExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
+             CaseExpression CastExpression CollateExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -268,6 +268,9 @@
     (create-honey-fn fn-keyword expressions)))
 
 (defmethod impl/expression RegExpMatchOperator [^RegExpMatchOperator jsql-expr]
+  (jsql-expr->raw-honey jsql-expr))
+
+(defmethod impl/expression CollateExpression [^CollateExpression jsql-expr]
   (jsql-expr->raw-honey jsql-expr))
 
 (defmethod impl/expression Column [jsql-expr]
