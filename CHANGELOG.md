@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
-## [1.0.32] - TBD
+## [1.0.32] - 2026-05-01
 ### Added
 - Support for parsing and converting SQL `DELETE` statements (WHERE, ORDER BY, LIMIT)
 - Support for parsing and converting SQL `UPDATE` statements (SET, WHERE, FROM, JOINs, CTEs, ORDER BY, LIMIT)
