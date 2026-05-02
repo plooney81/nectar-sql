@@ -1,97 +1,109 @@
 # nectar-sql
 
-[![Clojars](https://img.shields.io/badge/clojars-com.github.plooney81/nectarsql_1.0.31-blue.svg?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABjFBMVEUAAAAdCh0qDikdChwAAAAnDSY0EjM2FjUnDiYnDSYnDSYpDigyEDEEAQRGNUb///////8mDSYAAAAAAAAAAAAFAgUqEyoAAAAAAAAAAAAFAgUAAABXU1c2FjVMx+dQx+f///////9Nx+b////4/f6y4vRPt+RQtOT///9Qt+P///8oDSey4vRQr9/////3/P5hzelNx+dNx+dNx+f///8AAAAuDy0zETIAAAAoDScAAAAAAAARBREAAAAvDy40ETMwEC9gSF+Ne42ilKKuoK6Rg5B5ZXlaP1o4Gzf///9nTWZ4YncyEDF/bn/8/Pz9/P339/c1FTUlDCRRM1AbCRtlS2QyEDEuDy1gRWAxEDAzETIwEC/g4OAvDy40EjOaiZorDiq9sbzNyM3UzdQyEDE0ETMzETKflZ/UzdQ5Fzmu4fNYyuhNx+dPt+RLu9xQyOhBbo81GTuW2vCo4PJNx+c4MFE5N1lHiLFEhKQyEDGDboMzETI5Fjh5bXje2d57aHrIw8jc2NyWhJUrDioxe9o4AAAAPnRSTlMAkf+IAQj9+e7n6e31RtqAD/QAAAED+A0ZEQ8DwvkLBsmcR4aG8+cdAD6C8/MC94eP+qoTrgH+/wj1HA8eEvpXOCUAAAABYktHRA8YugDZAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wcHFjou4Z/shwAAAUpJREFUOMul0/VTwzAUB/AAwyW4y3B3h8EDNuTh7u6UDHcd8I+TbHSjWdrjju/1h77kc+3Lu5aQvyakF/r6B5wu1+DQMEBomLRtG0EpozYDCEccA4iIjIqOiY0bB5iYxHgZ4FQCpYneKmmal0aQPMOXZnUAvJhLkbpInf8NFtKCTrGImK6DJcTlDGl/BXGV6oCsrSNIYAM3aQDwl2xJYBtBB5lZAuyYgWzY3YMcNcjN2wc4EGMEFTg8+hlyfgEenygAj71Q9FBExH0wKC4p1bRTJlJWXqEAVNM05ovbXfkPAHBmAUQPAGaAsXMBLiwA8z3h0gRcsWsObuAWLJu8Awb3ZoB5T8EvS/CgBo9Y5Z8TPwXBJwlUI9Ia/yRrEZ8lID71Olrf0MiamkkL4kurDEjba+C/e2sninR0wrsH8eMTvrqIWbodjh7jyjdtCY3Aniz4jwAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAxNS0wNy0wN1QyMjo1ODo0NiswMjowMCgWtSoAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMTUtMDctMDdUMjI6NTg6NDYrMDI6MDBZSw2WAAAAAElFTkSuQmCC)](https://clojars.org/com.github.plooney81/nectar-sql)
+[![Clojars](https://img.shields.io/clojars/v/com.github.plooney81/nectar-sql.svg)](https://clojars.org/com.github.plooney81/nectar-sql)
 
 nectar: A sugary liquid secreted by plants, primarily in their flowers, to attract pollinators like bees, butterflies, and
 hummingbirds. It serves as the raw material for honey.
 
-`nectar-sql`: Converts raw sql strings into honey sql. nectar-sql takes a raw sql string, parses it (using [JSqlParser](JSqlParser)) and converts it into [honeysql](https://github.com/seancorfield/honeysql)
+`nectar-sql`: Converts raw SQL strings into HoneySQL data structures. `nectar-sql` takes a raw SQL string, parses it using [JSQLParser][JSqlParser] and converts it into [HoneySQL][honeysql].
 
-`nectar-sql` is currently a work in progress and, at present, can be expected to handle a wide variety of `SELECT` and `INSERT` queries.
+## Supported Statements
+
+| Statement  | Support                                        |
+|------------|------------------------------------------------|
+| `SELECT`   | Joins, CTEs (`WITH` / `WITH RECURSIVE` / `MATERIALIZED`), correlated subqueries, `EXISTS` / `NOT EXISTS`, window functions, aggregates, `GROUP BY` / `HAVING`, `ORDER BY`, `LIMIT` / `OFFSET`, set operations (`UNION`, `INTERSECT`, `EXCEPT`), `CASE WHEN`, `CAST`, JSON operators, `COLLATE`, and more |
+| `INSERT`   | `VALUES` (single and multi-row), `INSERT … SELECT`, `INSERT … SELECT … UNION ALL` |
+| `UPDATE`   | `SET`, `FROM`, `JOIN`, `WHERE` (including subqueries and `EXISTS`), `ORDER BY`, `LIMIT`, CTEs |
+| `DELETE`   | `WHERE` (including subqueries and `EXISTS`), `ORDER BY`, `LIMIT` |
+
+## Installation
+
+Add to your `deps.edn`:
+
+```clojure
+com.github.plooney81/nectar-sql {:mvn/version "1.0.32"}
+```
 
 ## Try It from Your REPL
 
-The Clojure REPL includes functions for [downloading and adding libraries][clj-add-lib] at runtime, making it super easy to try it out. From your REPL...
+The Clojure REPL includes functions for [downloading and adding libraries][clj-add-lib] at runtime:
 
 ```clojure
-user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.28"})
+user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.32"})
 ;;==> [com.github.jsqlparser/jsqlparser
 ;;==>  com.github.plooney81/nectar-sql
 ;;==>  com.github.seancorfield/honeysql]
 ```
 
-You may now import `nectar-sql` and convert a SQL string to HoneySQL. This might be handy if you have some SQL on hand and you're not sure what the HoneySQL would look like. Instead of trial and error, let `nectar-sql` convert it for you.
+## Usage
 
 ```clojure
-user> (require '[plooney81.nectar.sql :as nsql])
-;;==> nil
+(require '[plooney81.nectar.sql :as nsql])
 
-user> (nsql/ripen "select count(distinct id) from sales 
-                     where year = 2025 and quarter = 'Q4'")
+;; SELECT
+(nsql/ripen "SELECT * FROM people WHERE age > 25 ORDER BY age DESC")
+;;=> {:select   [:*]
+;;=>  :from     [:people]
+;;=>  :where    [:> :age 25]
+;;=>  :order-by [[:age :desc]]}
 
-;;==> {:select [[[:count [:distinct :id]]]]
-;;==>  :from   [:sales]
-;;==>  :where  [:and [:= :year 2025] [:= :quarter "Q4"]]
+;; INSERT
+(nsql/ripen "INSERT INTO users (id, name) VALUES (1, 'Alice')")
+;;=> {:insert-into [:users [:id :name]]
+;;=>  :values      [[1 "Alice"]]}
+
+;; UPDATE
+(nsql/ripen "UPDATE users SET name = 'Bob' WHERE id = 1")
+;;=> {:update :users
+;;=>  :set    {:name "Bob"}
+;;=>  :where  [:= :id 1]}
+
+;; DELETE
+(nsql/ripen "DELETE FROM users WHERE id = 1")
+;;=> {:delete-from [:users]
+;;=>  :where       [:= :id 1]}
 ```
 
-Adding `nectar-sql` to your project works much the same way. Add the dependency and then require the library where needed.
+This is handy when you have existing SQL and want to know what the HoneySQL equivalent looks like — without trial and error.
 
-```clojure
-user> (require '[plooney81.nectar.sql :as nsql])
-;;==> nil
+## Development
 
-;; convert a query...
-user> (nsql/ripen
-  "SELECT *
-     FROM people
-    WHERE age > 25
- ORDER BY age DESC")
+Run tests:
 
-;; ...to HoneySQL!
-;;==> {:select   [:*]
-;;==>  :from     [:people]
-;;==>  :where    [:> :age 25]
-;;==>  :order-by [[:age :desc]]}
-```
+    $ make test
 
-## Running Tests
+Run the REPL (with test classpath):
 
-Run the project's tests:
+    $ make repl
 
-    $ clj -T:build test
+Build a JAR:
 
-Run the project's CI pipeline and build a JAR (this will fail until you edit the tests to pass):
+    $ make ci
 
-    $ clj -T:build ci
+Deploy to Clojars (requires `CLOJARS_USERNAME` and `CLOJARS_PASSWORD`):
 
-This will produce an updated `pom.xml` file with synchronized dependencies inside the `META-INF`
-directory inside `target/classes` and the JAR in `target`. You can update the version (and SCM tag)
-information in generated `pom.xml` by updating `build.clj`.
+    $ make deploy
 
-Install it locally (requires the `ci` task be run first):
+Or run CI + deploy in one step:
 
-    $ clj -T:build install
+    $ make release
 
-Deploy it to Clojars -- needs `CLOJARS_USERNAME` and `CLOJARS_PASSWORD` environment
-variables (requires the `ci` task be run first):
+## Versioning
 
-    $ clj -T:build deploy
+The version is managed manually in the [`version`](version) file. To release a new version:
 
-Your library will be deployed to net.clojars.plooney81/nectar-sql on clojars.org by default.
+1. Update `version` with the new version string
+2. Add an entry to `CHANGELOG.md`
+3. Commit and push to `main` — CI will deploy automatically
 
-## Support
+## Limitations
 
-- Scope:
-    - We currently support `SELECT` and `INSERT` functionality
-    - We hope to support `UPDATE` and `DELETE` in the future
+- `nectar-sql` relies on [JSQLParser][JSqlParser]. Some SQL features are not yet supported by JSQLParser (e.g. implicit casting in PostgreSQL). See the [list of unsupported features][jsql-doesnt-support].
+- Multi-table `DELETE` with `JOIN` (MySQL-style) is not yet supported.
 
-- nectar-sql relies heavily on [JSQLParser](JSqlParser)
-    - JSQLParser doesn't currently support a few pieces of functionality, like Implicit Casting in Postgres
-        - Check out the other things that [JSQLParser doesn't support](jsql-doesnt-support)
-        
 ## Credit
 
-This project is proudly sponsored by [Luminare][luminare]! 😎
+This project is proudly sponsored by [Luminare][luminare]!
 
 ----
 [luminare]: https://luminare.io

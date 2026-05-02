@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
+## [1.0.32] - 2026-05-01
+### Added
+- Support for parsing and converting SQL `DELETE` statements (WHERE, ORDER BY, LIMIT)
+- Support for parsing and converting SQL `UPDATE` statements (SET, WHERE, FROM, JOINs, CTEs, ORDER BY, LIMIT)
+- Support for `INSERT … SELECT` and `INSERT … SELECT … UNION ALL`
+- Support for `EXISTS` and `NOT EXISTS` expressions
+- Support for `COLLATE` expressions
+- Added `Makefile` with `test`, `repl`, `ci`, `build`, `deploy`, `release`, `clean` targets
+
+### Changed
+- Upgraded jsqlparser to 5.3 with fixes for breaking API changes (JSON expression ident API, chained key merging, `ParenthesedExpressionList` single-element unwrapping)
+- Bumped all dependencies (HoneySQL 2.7.1368, Clojure 1.12.0, tools.build 0.10.9)
+- CI now auto-deploys to Clojars on push to `main`; tests run on all branches/PRs
+
+### Fixed
+- `CURRENT_TIMESTAMP` and other time key expressions threw `IllegalArgumentException`; now rendered as raw SQL
+- `UPDATE` statements with CTEs (`WITH`) or `JOIN` clauses were silently incomplete; both are now handled correctly
+- `MATERIALIZED` keyword on CTEs was silently dropped; now correctly produces `[:materialized ...]` in HoneySQL output
+- Version is now read from a `version` file instead of computed via `git-count-revs`, eliminating the circular versioning problem
+
 ## [1.0.31] - 2026-04-27
 ### Added
 - Support for parsing and converting SQL `INSERT` statements (single row and multi-row `VALUES`)
@@ -57,3 +77,4 @@ All notable changes to this project will be documented in this file. This change
 [1.0.24]: https://github.com/plooney81/nectar-sql/compare/1.0.22...1.0.24
 [1.0.27]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.27
 [1.0.31]: https://github.com/plooney81/nectar-sql/compare/1.0.27...1.0.31
+[1.0.32]: https://github.com/plooney81/nectar-sql/compare/1.0.31...1.0.32

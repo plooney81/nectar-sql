@@ -4,22 +4,13 @@
             [plooney81.nectar.sql.helpers :as helpers]
             [plooney81.nectar.sql.impl :as impl]
             [plooney81.nectar.sql.select-item :as select-item])
-  (:import (net.sf.jsqlparser.statement.select PlainSelect SetOperation SetOperationList WithItem)))
+  (:import (net.sf.jsqlparser.statement.select PlainSelect SetOperation SetOperationList)))
 
 ;; TODO - Maybe some helper for all of the `convert` functions
 ;;        Copying the pattern of `if-let` reduce else: return honey
-(defn convert-with-items [honey ^PlainSelect jsql-select]
+(defn convert-with-items [honey jsql-select]
   (if-let [with-items (jsql/get-with-items jsql-select)]
-    (let [any-recursive? (some jsql/is-recursive with-items)
-          with-fn        (if any-recursive?
-                           sql/with-recursive
-                           sql/with)]
-      (->> with-items
-           (reduce (fn [honey-sql ^WithItem with-item]
-                     (let [alias  (helpers/keywordize-alias with-item)
-                           select (jsql/get-select-in-paren-select with-item)]
-                       (with-fn honey-sql [alias (impl/select->honey {} select)])))
-                   honey)))
+    (helpers/convert-with-list honey with-items)
     honey))
 
 (defn convert-select-items [honey jsql-select]
@@ -57,35 +48,7 @@
 
 (defn convert-join-items [honey jsql-select]
   (if-let [join-items (jsql/get-join-items jsql-select)]
-    (->> join-items
-         (map (fn [join-item]
-                (let [type                     (jsql/determine-join-type join-item)
-                      table                    (jsql/get-join-table join-item)
-                      using                    (jsql/get-join-using-columns join-item)
-                      on-expressions           (jsql/get-join-on-expressions join-item)
-                      converted-table          (jsql/convert-table table)
-                      converted-using          (->> using
-                                                    (map helpers/convert-column))
-                      converted-on-expressions (->> on-expressions
-                                                    (map impl/expression->honey))]
-                  (cond-> {:type  type
-                           :table converted-table
-                           :on    converted-on-expressions}
-                    (not (empty? converted-using)) (assoc :using converted-using)))))
-         (reduce (fn [honey join-item]
-                   (let [{:keys [type table using on]} join-item
-                         join-fn (case type
-                                   :inner sql/inner-join
-                                   :left sql/left-join
-                                   :right sql/right-join
-                                   :full sql/full-join
-                                   :cross sql/cross-join
-                                   :outer sql/outer-join
-                                   sql/join)]
-                     (if using
-                       (join-fn honey table (into [:using] using))
-                       (apply join-fn honey table on))))
-                 honey))
+    (helpers/convert-join-list honey join-items)
     honey))
 
 (defn convert-where-items [honey jsql-select]

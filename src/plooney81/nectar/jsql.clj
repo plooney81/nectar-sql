@@ -3,6 +3,8 @@
            (net.sf.jsqlparser.parser CCJSqlParserUtil)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.insert Insert)
+           (net.sf.jsqlparser.statement.delete Delete)
+           (net.sf.jsqlparser.statement.update Update)
            (net.sf.jsqlparser.statement.select
              FromItem GroupByElement Join Limit Offset OrderByElement PlainSelect SelectItem SetOperationList WithItem)
            (net.sf.jsqlparser.expression
@@ -39,6 +41,9 @@
 
 (defn is-recursive [^WithItem with-item]
   (.isRecursive with-item))
+
+(defn is-materialized? [^WithItem with-item]
+  (.isMaterialized with-item))
 
 (defn get-parameters [^Function jsql]
   (.getParameters jsql))
@@ -190,6 +195,12 @@
 
 (defmethod get-order-by-elements AnalyticExpression [jsql-expr]
   (.getOrderByElements jsql-expr))
+
+(defmethod get-order-by-elements Delete [jsql-delete]
+  (.getOrderByElements jsql-delete))
+
+(defmethod get-order-by-elements Update [jsql-update]
+  (.getOrderByElements jsql-update))
 
 (defmethod get-order-by-elements :default [jsql-expr]
   (throw (IllegalArgumentException.

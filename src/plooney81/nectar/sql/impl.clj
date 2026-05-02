@@ -20,6 +20,18 @@
     (.getClass jsql-insert)))
 
 (defmulti
+  update->honey
+  "Converts jsql-update objects to honey-sql based on the class"
+  (fn [_honey jsql-update]
+    (.getClass jsql-update)))
+
+(defmulti
+  delete->honey
+  "Converts jsql-delete objects to honey-sql based on the class"
+  (fn [_honey jsql-delete]
+    (.getClass jsql-delete)))
+
+(defmulti
   expression
   "Converts a jsql expression to an alternative syntax that will ultimately be used to convert to honeysql"
   (fn [jsql-expr]

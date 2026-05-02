@@ -1,14 +1,12 @@
 (ns build
   (:refer-clojure :exclude [test])
-  (:require [clojure.tools.deps :as t]
+  (:require [clojure.string :as str]
+            [clojure.tools.deps :as t]
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'com.github.plooney81/nectar-sql)
-#_(def version "1.0.1-SNAPSHOT")
-; alternatively, use MAJOR.MINOR.COMMITS:
-(def version (format "1.0.%s" (b/git-count-revs nil)))
-#_(def version "1.0.1")
+(def version (str/trim (slurp "version")))
 (def class-dir "target/classes")
 
 (defn test "Run all the tests." [opts]

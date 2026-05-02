@@ -8,10 +8,10 @@
              Addition BitwiseAnd BitwiseLeftShift BitwiseOr BitwiseRightShift Concat Division Modulo Multiplication Subtraction)
            (net.sf.jsqlparser.expression.operators.conditional AndExpression OrExpression)
            (net.sf.jsqlparser.expression.operators.relational
-             Between EqualsTo GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
+             Between EqualsTo ExistsExpression GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CaseExpression CastExpression DoubleValue JsonExpression NotExpression SignedExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
+             CaseExpression CastExpression CollateExpression DoubleValue JsonExpression NotExpression SignedExpression TimeKeyExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -23,8 +23,10 @@
   (impl/jsql->honey-adapter {} (jsql/get-plain-select jsql-expr)))
 
 (defmethod impl/expression ParenthesedExpressionList [jsql-expr]
-  (->> jsql-expr
-       (mapv #(impl/expression %))))
+  (let [items (mapv #(impl/expression %) jsql-expr)]
+    (if (= 1 (count items))
+      (first items)
+      items)))
 
 (defn- get-left-and-right [jsql-expr]
   (let [left-expression  (impl/expression (jsql/get-left-expression jsql-expr))
@@ -131,6 +133,13 @@
                             (keyword like-type))]
     (handle-regular-operation actual-type (get-left-and-right jsql-expr))))
 
+(defmethod impl/expression ExistsExpression [^ExistsExpression jsql-expr]
+  (let [subquery (impl/expression->honey (.getRightExpression jsql-expr))
+        exists   [:exists subquery]]
+    (if (jsql/is-not? jsql-expr)
+      [:not exists]
+      exists)))
+
 (defmethod impl/expression IsNullExpression [jsql-expr]
   (let [is-not?   (jsql/is-not? jsql-expr)
         left-expr (impl/expression (jsql/get-left-expression jsql-expr))]
@@ -189,19 +198,32 @@
 (impl/register-operator! :->)
 (impl/register-operator! :->>)
 ;; https://github.com/seancorfield/honeysql/blob/develop/test/honey/sql/pg_ops_test.cljc
+(defn- jsql-value->str [v]
+  (if (instance? StringValue v)
+    (.getValue ^StringValue v)
+    (str v)))
+
+(defn- expand-json-key
+  "jsqlparser 5.x merges chained accesses like -> 'a' -> 'b' into a single
+  ident key string \"'a'->'b'\". Splits it back into individual keys."
+  [k]
+  (if (re-find #"'->>'|'->'" k)
+    (->> (re-seq #"'([^']*)'" k) (mapv second))
+    [(cleanup-key k)]))
+
 (defmethod impl/expression JsonExpression [^JsonExpression jsql-expr]
   (let [expression (impl/expression (jsql/get-expression jsql-expr))
         expression (if (vector? expression) (first expression) expression)
         {:keys [operator exprs]} (->> jsql-expr
                                       (.getIdentList)
-                                      (map (fn [ident]
-                                             {:operator (keyword (.getValue ident))
-                                              :exprs    (cleanup-key (.getKey ident))}))
+                                      (mapcat (fn [ident]
+                                                (let [op   (keyword (jsql-value->str (.getValue ident)))
+                                                      keys (expand-json-key (jsql-value->str (.getKey ident)))]
+                                                  (mapv (fn [k] {:operator op :exprs k}) keys))))
                                       (group-by :operator)
                                       (map (fn [[k v]]
                                              {:operator k
-                                              :exprs    (->> v
-                                                             (mapv :exprs))}))
+                                              :exprs    (mapv :exprs v)}))
                                       (apply merge))
         inner (into [operator expression] exprs)]
     [inner]))
@@ -254,6 +276,12 @@
 
 (defmethod impl/expression RegExpMatchOperator [^RegExpMatchOperator jsql-expr]
   (jsql-expr->raw-honey jsql-expr))
+
+(defmethod impl/expression CollateExpression [^CollateExpression jsql-expr]
+  (jsql-expr->raw-honey jsql-expr))
+
+(defmethod impl/expression TimeKeyExpression [^TimeKeyExpression jsql-expr]
+  [:raw (.getStringValue jsql-expr)])
 
 (defmethod impl/expression Column [jsql-expr]
   (helpers/convert-column jsql-expr))

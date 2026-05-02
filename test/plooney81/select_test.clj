@@ -544,6 +544,10 @@
      :select         [:e.employee_name :t.total_sales],
      :from           [[:employees :e]],
      :inner-join     [[:top_sales :t] [:= :e.employee_id :t.employee_id]]})
+  (testing "Materialized CTE"
+    (let [sql   "WITH stuff AS MATERIALIZED (SELECT * FROM t) SELECT * FROM stuff"
+          honey {:with [[:stuff [:materialized {:select [:*], :from [:t]}]]], :select [:*], :from [:stuff]}]
+      (is (= (nsql/ripen sql) honey))))
   (th/test-nectar
     "Nested Sub-query"
     (str "SELECT employee_id, first_name, last_name, department_id, "
@@ -646,3 +650,8 @@
 
 
   )
+
+(deftest collate-expressions
+  (testing "COLLATE as select item"
+    (let [sql "SELECT name COLLATE utf8 FROM users"]
+      (is (some? (nsql/ripen sql))))))
