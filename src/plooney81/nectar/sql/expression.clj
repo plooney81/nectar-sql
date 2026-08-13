@@ -11,7 +11,9 @@
              Between EqualsTo ExistsExpression GreaterThan GreaterThanEquals InExpression JsonOperator LikeExpression MinorThan MinorThanEquals
              NotEqualsTo IsNullExpression ParenthesedExpressionList RegExpMatchOperator)
            (net.sf.jsqlparser.expression
-             CaseExpression CastExpression CollateExpression DoubleValue JsonExpression NotExpression SignedExpression TimeKeyExpression TrimFunction Function LongValue Parenthesis StringValue WhenClause)
+             BooleanValue CaseExpression CastExpression CollateExpression DateValue DoubleValue JdbcNamedParameter JdbcParameter JsonExpression
+             NotExpression NullValue SignedExpression TimeKeyExpression TimeValue TimestampValue TrimFunction Function LongValue Parenthesis
+             StringValue WhenClause)
            (net.sf.jsqlparser.schema Column)
            (net.sf.jsqlparser.statement.create.table ColDataType)
            (net.sf.jsqlparser.statement.select AllColumns ParenthesedSelect)))
@@ -54,7 +56,7 @@
       (handle-regular-operation operator exprs))))
 
 (defmethod impl/expression NotExpression [jsql-expr]
-  [:not (impl/expression (jsql/get-expression jsql-expr))])
+  [:not (impl/expression->honey (jsql/get-expression jsql-expr))])
 
 (defmethod impl/expression AndExpression [jsql-expr]
   (handle-prefix-notation-operation :and (get-left-and-right jsql-expr)))
@@ -297,6 +299,36 @@
 
 (defmethod impl/expression DoubleValue [^DoubleValue jsql-expr]
   (jsql/get-value jsql-expr))
+
+(defmethod impl/expression BooleanValue [^BooleanValue jsql-expr]
+  (jsql/get-value jsql-expr))
+
+(defmethod impl/expression NullValue [^NullValue _jsql-expr]
+  nil)
+
+;; JDBC escape literals ({d '...'}, {t '...'}, {ts '...'}) have no honeysql
+;; equivalent, so they pass through verbatim. Note that jsqlparser normalizes
+;; the timestamp form, padding it out to `{ts '2020-01-01 10:00:00.0'}`.
+(defn- jdbc-escape-literal->honey [jsql-expr]
+  [:raw (str jsql-expr)])
+
+(defmethod impl/expression DateValue [^DateValue jsql-expr]
+  (jdbc-escape-literal->honey jsql-expr))
+
+(defmethod impl/expression TimeValue [^TimeValue jsql-expr]
+  (jdbc-escape-literal->honey jsql-expr))
+
+(defmethod impl/expression TimestampValue [^TimestampValue jsql-expr]
+  (jdbc-escape-literal->honey jsql-expr))
+
+;; `?` / `?3` / `:name` become honeysql's `:?name` parameter shorthand, so the
+;; converted query still takes its values at format time via `{:params {...}}`.
+;; Positional parameters have no name in SQL, so we mint one from the index.
+(defmethod impl/expression JdbcParameter [^JdbcParameter jsql-expr]
+  (keyword (str "?p" (.getIndex jsql-expr))))
+
+(defmethod impl/expression JdbcNamedParameter [^JdbcNamedParameter jsql-expr]
+  (keyword (str "?" (.getName jsql-expr))))
 
 (defn generic-fn->honey [^Function jsql-function]
   (let [fn->keyword (-> (.getName jsql-function)

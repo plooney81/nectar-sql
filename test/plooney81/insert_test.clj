@@ -15,4 +15,10 @@
          "VALUES (1, 'john_doe', 'john@example.com'), (2, 'admin', 'admin@example.com')")
     {:insert-into [[:users :u] [:id :username :email]]
      :values      [[1 "john_doe" "john@example.com"] [2 "admin" "admin@example.com"]]})
+  (th/test-nectar
+    "insert with boolean and null literals"
+    (str "INSERT INTO users (id, active, email)\n"
+         "VALUES (1, TRUE, NULL)")
+    {:insert-into [:users [:id :active :email]]
+     :values      [[1 true nil]]})
   )

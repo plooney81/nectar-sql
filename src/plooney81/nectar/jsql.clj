@@ -172,6 +172,9 @@
 (defn get-where [^PlainSelect jsql-select]
   (.getWhere jsql-select))
 
+(defn get-having [^PlainSelect jsql-select]
+  (.getHaving jsql-select))
+
 (defn get-window-definitions
   ^WindowDefinition [^PlainSelect jsql-select]
   (.getWindowDefinitions jsql-select))
