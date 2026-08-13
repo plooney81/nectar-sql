@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
+## [1.0.33] - 2026-08-13
+### Added
+- Support for boolean literals (`TRUE`/`FALSE`) and the `NULL` literal
+- Support for `HAVING` clauses on `SELECT`
+- Support for JDBC parameters: `?`, `?3`, and `:name` convert to HoneySQL's `:?name` parameter shorthand, so converted queries still take their values at format time via `{:params {...}}`. Positional parameters are named from their index (`?` → `:?p1`)
+- Support for JDBC escape date/time literals (`{d '…'}`, `{t '…'}`, `{ts '…'}`), which have no HoneySQL equivalent and so pass through as raw SQL
+
+### Fixed
+- `WHERE active = TRUE` threw `Unsupported Expression type: BooleanValue`; boolean literals are now converted
+- `HAVING` was silently dropped from `SELECT` statements, producing a query that parsed but quietly lost its filter
+- `NOT` over a compound expression emitted an internal intermediate map rather than HoneySQL, which HoneySQL then rejected with "These SQL clauses are unknown or have nil values: :type, :exprs". Only `NOT <column>` had worked
+
 ## [1.0.32] - 2026-05-01
 ### Added
 - Support for parsing and converting SQL `DELETE` statements (WHERE, ORDER BY, LIMIT)
