@@ -155,6 +155,30 @@
      :group-by [:ft.first_group :ft.second_group],
      :order-by [[:ft.first_order :asc] [:ft.second_order :desc]]})
   (th/test-nectar
+    "HAVING support"
+    (str "SELECT department, COUNT(*) AS headcount\n"
+         "FROM employees\n"
+         "WHERE active = TRUE\n"
+         "GROUP BY department\n"
+         "HAVING COUNT(*) > 5\n"
+         "ORDER BY department ASC")
+    {:select   [:department [[:count :*] :headcount]],
+     :from     [:employees],
+     :where    [:= :active true],
+     :group-by [:department],
+     :having   [:> [:count :*] 5],
+     :order-by [[:department :asc]]})
+  (th/test-nectar
+    "HAVING with a compound expression"
+    (str "SELECT department, SUM(salary)\n"
+         "FROM employees\n"
+         "GROUP BY department\n"
+         "HAVING (SUM(salary) > 10) AND (COUNT(*) < 100)")
+    {:select   [:department [[:sum :salary]]],
+     :from     [:employees],
+     :group-by [:department],
+     :having   [:and [:> [:sum :salary] 10] [:< [:count :*] 100]]})
+  (th/test-nectar
     "LIMIT/OFFSET support"
     (str "SELECT ft.first_column, ft.second_column\n"
          "FROM first_table AS ft\n"
@@ -588,7 +612,73 @@
   (th/test-nectar
     "NOT operator"
     (str "SELECT *\nFROM orders\nWHERE NOT something")
-    {:select [:*], :from [:orders], :where [:not :something]}))
+    {:select [:*], :from [:orders], :where [:not :something]})
+  (th/test-nectar
+    "NOT wrapping a compound expression"
+    (str "SELECT *\nFROM orders\nWHERE NOT ((amount = 1) AND (status IN ('pending', 'shipped')))")
+    {:select [:*]
+     :from   [:orders]
+     :where  [:not [:and [:= :amount 1] [:in :status ["pending" "shipped"]]]]}))
+
+(deftest literal-values
+  (th/test-nectar
+    "Boolean literals"
+    (str "SELECT *\nFROM orders\nWHERE (active = TRUE) AND (deleted = FALSE)")
+    {:select [:*], :from [:orders], :where [:and [:= :active true] [:= :deleted false]]})
+  (th/test-nectar
+    "Boolean literal in a NOT expression"
+    (str "SELECT *\nFROM orders\nWHERE NOT (active = TRUE)")
+    {:select [:*], :from [:orders], :where [:not [:= :active true]]})
+  (th/test-nectar
+    "NULL literal"
+    (str "SELECT *\nFROM orders\nWHERE something IS NULL")
+    {:select [:*], :from [:orders], :where [:= :something nil]}))
+
+(deftest date-time-literals
+  (th/test-nectar
+    "Standard date/time literals convert to casts"
+    (str "SELECT *\nFROM orders\nWHERE (placed_on > (CAST('2020-01-01' AS DATE))) AND (placed_at < (CAST('2021-01-01 10:00:00' AS TIMESTAMP)))")
+    {:select [:*]
+     :from   [:orders]
+     :where  [:and
+              [:> :placed_on [[:cast "2020-01-01" :date]]]
+              [:< :placed_at [[:cast "2021-01-01 10:00:00" :timestamp]]]]})
+  (th/test-nectar
+    "JDBC escape date literal"
+    (str "SELECT *\nFROM orders\nWHERE placed_on = {d '2020-01-01'}")
+    {:select [:*], :from [:orders], :where [:= :placed_on [:raw "{d '2020-01-01'}"]]})
+  (th/test-nectar
+    "JDBC escape time literal"
+    (str "SELECT *\nFROM orders\nWHERE placed_at = {t '10:00:00'}")
+    {:select [:*], :from [:orders], :where [:= :placed_at [:raw "{t '10:00:00'}"]]})
+  (th/test-nectar
+    "JDBC escape timestamp literal"
+    (str "SELECT *\nFROM orders\nWHERE placed_at BETWEEN {ts '2020-01-01 10:00:00.0'} AND {ts '2021-01-01 10:00:00.0'}")
+    {:select [:*]
+     :from   [:orders]
+     :where  [:between :placed_at [:raw "{ts '2020-01-01 10:00:00.0'}"] [:raw "{ts '2021-01-01 10:00:00.0'}"]]})
+  (testing "jsqlparser normalizes the timestamp escape, padding out fractional seconds"
+    (is (= (nsql/ripen "SELECT *\nFROM orders\nWHERE placed_at = {ts '2020-01-01 10:00:00'}")
+           {:select [:*], :from [:orders], :where [:= :placed_at [:raw "{ts '2020-01-01 10:00:00.0'}"]]}))))
+
+(deftest jdbc-parameters
+  (th/test-nectar
+    "Positional parameters are named by index"
+    (str "SELECT *\nFROM orders\nWHERE (status = ?) AND (amount > ?)")
+    {:select [:*], :from [:orders], :where [:and [:= :status :?p1] [:> :amount :?p2]]}
+    {:inline false :params {:p1 "pending" :p2 100}})
+  (testing "Named parameters keep their name"
+    ;; No round-trip via test-nectar here: `:cutoff` formats back out as a plain
+    ;; `?`, so the output SQL can't match the input by construction.
+    (let [nectar (nsql/ripen "SELECT *\nFROM orders\nWHERE placed_on > :cutoff")]
+      (is (= nectar {:select [:*], :from [:orders], :where [:> :placed_on :?cutoff]}))
+      (is (= (th/honey->text nectar {:inline false :params {:cutoff "2020-01-01"}})
+             "SELECT *\nFROM orders\nWHERE placed_on > ?"))))
+  (testing "Fixed-index parameters use their explicit index"
+    ;; honeysql has no fixed-index placeholder, so `?3` formats back out as a
+    ;; plain `?` — the index survives in the param name only.
+    (is (= (nsql/ripen "SELECT * FROM orders WHERE amount > ?3")
+           {:select [:*], :from [:orders], :where [:> :amount :?p3]}))))
 
 (deftest case-when-expressions
   (testing "Searched CASE WHEN with equality and ELSE"

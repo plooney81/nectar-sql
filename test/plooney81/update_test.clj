@@ -43,4 +43,12 @@
     {:update   :users
      :set      {:name "John"}
      :order-by [[:id :asc]]
-     :limit    5}))
+     :limit    5})
+  (th/test-nectar
+    "update with a boolean literal"
+    (str "UPDATE users\n"
+         "SET active = FALSE\n"
+         "WHERE verified = TRUE")
+    {:update :users
+     :set    {:active false}
+     :where  [:= :verified true]}))

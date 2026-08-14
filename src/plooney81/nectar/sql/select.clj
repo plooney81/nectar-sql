@@ -87,6 +87,11 @@
       (apply sql/group-by honey group-bys))
     honey))
 
+(defn convert-having-items [honey jsql-select]
+  (if-let [having-item (jsql/get-having jsql-select)]
+    (sql/having honey (impl/expression->honey having-item))
+    honey))
+
 (defn convert-order-by-items
   [honey jsql]
   (if-let [order-by-items (helpers/convert-order-by-items jsql)]
@@ -112,6 +117,7 @@
       (convert-where-items jsql-plain-select)
       (convert-window-items jsql-plain-select)
       (convert-group-by-items jsql-plain-select)
+      (convert-having-items jsql-plain-select)
       (convert-order-by-items jsql-plain-select)
       (convert-limit jsql-plain-select)
       (convert-offset jsql-plain-select)
