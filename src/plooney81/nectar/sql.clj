@@ -54,10 +54,9 @@
   ([raw-sql] (ripen raw-sql {}))
   ([raw-sql {:keys [output] :or {output :map} :as opts}]
    (let [honey-map (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql))]
-     (case output
-       :map     honey-map
-       :helpers (honey->helpers honey-map opts)
-       :both    (assoc (honey->helpers honey-map opts) :map honey-map)))))
+     (cond-> honey-map
+       (#{:helpers :both} output) (honey->helpers opts)
+       (= :both output)           (assoc :map honey-map)))))
 
 (comment
   (do
