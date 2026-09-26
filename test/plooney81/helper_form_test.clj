@@ -16,6 +16,10 @@
                   "(-> (h/select :a) (h/from :t))\n")
              text)))))
 
+(deftest ripen-unknown-output
+  (testing "an unrecognised :output fails rather than silently returning the map"
+    (is (thrown? AssertionError (nsql/ripen "SELECT a FROM t" {:output :helper})))))
+
 (deftest ripen-both-output
   (testing ":output :both returns the map alongside the helper output"
     (let [sql    "SELECT a FROM t WHERE b = 1"

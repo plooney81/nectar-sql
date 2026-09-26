@@ -53,6 +53,7 @@
      :alias  - with `:helpers` or `:both`, the helper alias (default `'h`)"
   ([raw-sql] (ripen raw-sql {}))
   ([raw-sql {:keys [output] :or {output :map} :as opts}]
+   {:pre [(#{:map :helpers :both} output)]}
    (let [honey-map (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql))]
      (cond-> honey-map
        (#{:helpers :both} output) (honey->helpers opts)
