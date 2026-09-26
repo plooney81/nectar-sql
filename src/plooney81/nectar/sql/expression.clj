@@ -4,7 +4,8 @@
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.impl :as impl]
             [plooney81.nectar.sql.helpers :as helpers])
-  (:import (net.sf.jsqlparser.expression.operators.arithmetic
+  (:import (net.sf.jsqlparser.expression BinaryExpression)
+           (net.sf.jsqlparser.expression.operators.arithmetic
              Addition BitwiseAnd BitwiseLeftShift BitwiseOr BitwiseRightShift Concat Division Modulo Multiplication Subtraction)
            (net.sf.jsqlparser.expression.operators.conditional AndExpression OrExpression)
            (net.sf.jsqlparser.expression.operators.relational
@@ -58,11 +59,19 @@
 (defmethod impl/expression NotExpression [jsql-expr]
   [:not (impl/expression->honey (jsql/get-expression jsql-expr))])
 
+(defn- handle-associative-operation
+  "Like `handle-prefix-notation-operation`, but also merges a right operand of
+   the same type, so a right-nested `a AND (b AND c)` flattens to [:and a b c]."
+  [operator exprs]
+  (let [operands (fn [expr]
+                   (if (= (:type expr) operator) (:exprs expr) [expr]))]
+    (handle-regular-operation operator (into [] (mapcat operands) exprs))))
+
 (defmethod impl/expression AndExpression [jsql-expr]
-  (handle-prefix-notation-operation :and (get-left-and-right jsql-expr)))
+  (handle-associative-operation :and (get-left-and-right jsql-expr)))
 
 (defmethod impl/expression OrExpression [jsql-expr]
-  (handle-prefix-notation-operation :or (get-left-and-right jsql-expr)))
+  (handle-associative-operation :or (get-left-and-right jsql-expr)))
 
 (defmethod impl/expression EqualsTo [jsql-expr]
   (handle-regular-operation := (get-left-and-right jsql-expr)))
@@ -116,9 +125,51 @@
 (defmethod impl/expression Concat [^Concat jsql-expr]
   (handle-prefix-notation-operation :|| (get-left-and-right jsql-expr)))
 
+(defn- conditional? [jsql-expr]
+  (or (instance? AndExpression jsql-expr)
+      (instance? OrExpression jsql-expr)))
+
+(defn- unswallow-in-conditional
+  "JSqlParser 5.3 parses `a IN (…) AND b = 1` as `a IN ((…) AND b = 1)`: the IN's
+   right side swallows the AND/OR that follows it. The IN list is always the
+   leftmost leaf of that swallowed conditional, so wrap the IN back around the
+   leaf, returning the conditional as it should have parsed. 5.4 fixes the
+   parse, but regresses other expressions we support."
+  [^InExpression in-expr]
+  (letfn [(rewrite [expr]
+            (if (conditional? expr)
+              (doto ^BinaryExpression expr
+                (.setLeftExpression (rewrite (jsql/get-left-expression expr))))
+              (doto (InExpression. (jsql/get-left-expression in-expr) expr)
+                (.setNot (jsql/is-not? in-expr)))))]
+    (rewrite (jsql/get-right-expression in-expr))))
+
+(defn- param? [honey]
+  (and (keyword? honey) (str/starts-with? (name honey) "?")))
+
+(defn- in-list
+  "The honey for an IN's parenthesised list. `converted` is the list as the
+   ParenthesedExpressionList method converts it, which unwraps a one-item list.
+   - A lone param stays bare: HoneySQL expands a collection param into the list.
+   - A list led by a keyword (a column or param) would read as a function call,
+     e.g. [:b :c] formats as `B(c)`, so it becomes [:composite :b :c].
+   - Otherwise it is a vector of values, e.g. [1 2]."
+  [jsql-list converted]
+  (let [items (mapv impl/expression->honey jsql-list)]
+    (cond
+      (and (= 1 (count items)) (param? converted)) converted
+      (keyword? (first items))                     (into [:composite] items)
+      :else                                        items)))
+
 (defmethod impl/expression InExpression [^InExpression jsql-expr]
-  (cond-> (handle-prefix-notation-operation :in (get-left-and-right jsql-expr))
-    (jsql/is-not? jsql-expr) (assoc :type :not-in)))
+  (if (conditional? (jsql/get-right-expression jsql-expr))
+    (impl/expression (unswallow-in-conditional jsql-expr))
+    (let [[left right] (get-left-and-right jsql-expr)
+          jsql-right   (jsql/get-right-expression jsql-expr)
+          right        (if (instance? ParenthesedExpressionList jsql-right)
+                         (in-list jsql-right right)
+                         right)]
+      (handle-regular-operation (if (jsql/is-not? jsql-expr) :not-in :in) [left right]))))
 
 (defmethod impl/expression Between [^Between jsql-expr]
   (let [left-expr    (impl/expression (jsql/get-left-expression jsql-expr))

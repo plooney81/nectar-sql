@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file. This change
 - `honey->helpers` converts any HoneySQL map into the same helper output
 - The test suite evaluates the helper form and text for every case and checks that they build exactly the map `ripen` returns
 
+### Fixed
+- `WHERE a IN (…) AND b = 1` (or `OR`) produced an internal intermediate map inside the `:in`, which HoneySQL then rejected. JSqlParser 5.3 parses the `AND`/`OR` that follows an `IN` list into the list itself. The parse is now corrected during conversion. JSqlParser 5.4 fixes this, but it regresses chained JSON operators and window frame units
+- `IN` with a single value (`IN ('a')`) formatted as `IN 'a'`. It now keeps its list
+- `IN` lists led by a column or parameter (`IN (b, c)`, `IN (?, ?)`) formatted as a function call (`B(c)`). They now use `[:composite …]`. A lone `IN (?)` stays a bare parameter, so it can still take a collection
+- Right-nested `AND`/`OR` now flatten, e.g. `[:and a b c]` instead of `[:and a [:and b c]]`
+
 ## [1.0.33] - 2026-08-13
 ### Added
 - Support for boolean literals (`TRUE`/`FALSE`) and the `NULL` literal
