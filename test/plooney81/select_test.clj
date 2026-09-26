@@ -620,6 +620,56 @@
      :from   [:orders]
      :where  [:not [:and [:= :amount 1] [:in :status ["pending" "shipped"]]]]}))
 
+(deftest in-expressions
+  (testing "IN followed by AND/OR without parentheses"
+    ;; jsqlparser 5.3 parses `a IN (…) AND b` as `a IN ((…) AND b)`. No round-trip
+    ;; via test-nectar: honeysql parenthesises each operand, so the output SQL
+    ;; can't match the unparenthesised input.
+    (are [sql expected-where expected-sql]
+      (let [nectar (nsql/ripen sql)]
+        (and (is (= expected-where (:where nectar)))
+             (is (= expected-sql (th/honey->text nectar)))))
+
+      "SELECT * FROM orders WHERE status IN ('a', 'b') AND amount = 1"
+      [:and [:in :status ["a" "b"]] [:= :amount 1]]
+      "SELECT *\nFROM orders\nWHERE (status IN ('a', 'b')) AND (amount = 1)"
+
+      "SELECT * FROM orders WHERE status NOT IN ('a') OR amount = 1"
+      [:or [:not-in :status ["a"]] [:= :amount 1]]
+      "SELECT *\nFROM orders\nWHERE (status NOT IN ('a')) OR (amount = 1)"
+
+      "SELECT * FROM orders WHERE id IN (SELECT order_id FROM items) AND amount = 1"
+      [:and [:in :id {:select [:order_id] :from [:items]}] [:= :amount 1]]
+      "SELECT *\nFROM orders\nWHERE (id IN (SELECT order_id FROM items)) AND (amount = 1)"
+
+      "SELECT * FROM orders WHERE status IN ('a') OR amount = 1 AND id = 2"
+      [:or [:in :status ["a"]] [:and [:= :amount 1] [:= :id 2]]]
+      "SELECT *\nFROM orders\nWHERE (status IN ('a')) OR ((amount = 1) AND (id = 2))"
+
+      "SELECT * FROM orders WHERE amount = 1 AND status IN ('a') AND id = 2"
+      [:and [:= :amount 1] [:in :status ["a"]] [:= :id 2]]
+      "SELECT *\nFROM orders\nWHERE (amount = 1) AND (status IN ('a')) AND (id = 2)"))
+  (th/test-nectar
+    "IN with a single value"
+    "SELECT *\nFROM orders\nWHERE status IN ('pending')"
+    {:select [:*], :from [:orders], :where [:in :status ["pending"]]})
+  (th/test-nectar
+    "IN with columns"
+    "SELECT *\nFROM orders\nWHERE status IN (old_status, new_status)"
+    {:select [:*], :from [:orders], :where [:in :status [:composite :old_status :new_status]]})
+  (th/test-nectar
+    "IN with positional parameters"
+    "SELECT *\nFROM orders\nWHERE status IN (?, ?)"
+    {:select [:*], :from [:orders], :where [:in :status [:composite :?p1 :?p2]]}
+    {:inline false :params {:p1 "a" :p2 "b"}})
+  (testing "IN with a single parameter stays bare, so it can take a collection"
+    ;; No round-trip via test-nectar: honeysql expands the collection into one
+    ;; placeholder per value.
+    (let [nectar (nsql/ripen "SELECT *\nFROM orders\nWHERE status IN (?)")]
+      (is (= nectar {:select [:*], :from [:orders], :where [:in :status :?p1]}))
+      (is (= (th/honey->text nectar {:inline false :params {:p1 ["a" "b"]}})
+             "SELECT *\nFROM orders\nWHERE status IN (?, ?)")))))
+
 (deftest literal-values
   (th/test-nectar
     "Boolean literals"

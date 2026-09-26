@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
+## [1.0.34] - 2026-09-26
+### Added
+- HoneySQL helper output ([#19](https://github.com/plooney81/nectar-sql/issues/19)): `(ripen sql {:output :helpers})` returns the query as a threaded `honey.sql.helpers` chain, as both a quoted `:form` and a pretty-printed `:text` (which starts with the `:require` line). Subqueries, CTEs, set operations and `INSERT … SELECT` come out as nested chains, and `:alias` picks the helper alias (default `h`)
+- `honey->helpers` converts any HoneySQL map into the same helper output
+- `(ripen sql {:output :both})` returns `{:map … :form … :text …}` from a single parse
+- The test suite evaluates the helper form and text for every case and checks that they build exactly the map `ripen` returns
+
+### Fixed
+- `WHERE a IN (…) AND b = 1` (or `OR`) produced an internal intermediate map inside the `:in`, which HoneySQL then rejected. JSqlParser 5.3 parses the `AND`/`OR` that follows an `IN` list into the list itself. The parse is now corrected during conversion. JSqlParser 5.4 fixes this, but it regresses chained JSON operators and window frame units
+- `IN` with a single value (`IN ('a')`) formatted as `IN 'a'`. It now keeps its list
+- `IN` lists led by a column or parameter (`IN (b, c)`, `IN (?, ?)`) formatted as a function call (`B(c)`). They now use `[:composite …]`. A lone `IN (?)` stays a bare parameter, so it can still take a collection
+- Right-nested `AND`/`OR` now flatten, e.g. `[:and a b c]` instead of `[:and a [:and b c]]`
+
 ## [1.0.33] - 2026-08-13
 ### Added
 - Support for boolean literals (`TRUE`/`FALSE`) and the `NULL` literal
@@ -91,3 +104,4 @@ All notable changes to this project will be documented in this file. This change
 [1.0.31]: https://github.com/plooney81/nectar-sql/compare/1.0.27...1.0.31
 [1.0.32]: https://github.com/plooney81/nectar-sql/compare/1.0.31...1.0.32
 [1.0.33]: https://github.com/plooney81/nectar-sql/compare/1.0.32...1.0.33
+[1.0.34]: https://github.com/plooney81/nectar-sql/compare/1.0.33...1.0.34

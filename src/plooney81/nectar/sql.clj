@@ -3,6 +3,7 @@
             [honey.sql.pg-ops]
             [plooney81.nectar.jsql :as jsql]
             [plooney81.nectar.sql.expression]
+            [plooney81.nectar.sql.helper-form :as helper-form]
             [plooney81.nectar.sql.impl :as impl]
             [plooney81.nectar.sql.insert]
             [plooney81.nectar.sql.select]
@@ -31,10 +32,32 @@
 (defmethod impl/jsql->honey-adapter Delete [honey jsql]
   (impl/delete->honey honey jsql))
 
+(defn honey->helpers
+  "Accepts a honeysql map and returns the equivalent `honey.sql.helpers` code as
+   `{:form <quoted form> :text <pretty-printed string>}`. The form is a threaded
+   `->` chain; `:text` also starts with the `:require` line it expects.
+
+   Options:
+     :alias - the alias the helpers are referenced through (default `'h`)"
+  ([honey-map] (honey->helpers honey-map {}))
+  ([honey-map opts]
+   (helper-form/helpers-output honey-map opts)))
+
 (defn ripen
-  "Process of turning nectar into honey. Accepts a raw-sql string and returns a honeysql map."
-  [raw-sql]
-  (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql)))
+  "Process of turning nectar into honey. Accepts a raw-sql string and returns a honeysql map.
+
+   Options:
+     :output - `:map` (default) returns the honeysql map; `:helpers` returns
+               `{:form ... :text ...}`, see `honey->helpers`; `:both` returns
+               `{:map ... :form ... :text ...}` from a single parse
+     :alias  - with `:helpers` or `:both`, the helper alias (default `'h`)"
+  ([raw-sql] (ripen raw-sql {}))
+  ([raw-sql {:keys [output] :or {output :map} :as opts}]
+   {:pre [(#{:map :helpers :both} output)]}
+   (let [honey-map (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql))]
+     (cond-> honey-map
+       (#{:helpers :both} output) (honey->helpers opts)
+       (= :both output)           (assoc :map honey-map)))))
 
 (comment
   (do
