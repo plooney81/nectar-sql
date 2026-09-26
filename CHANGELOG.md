@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 - Everything up to date
 
+## [1.0.34] - 2026-09-26
+### Added
+- HoneySQL helper output ([#19](https://github.com/plooney81/nectar-sql/issues/19)): `(ripen sql {:output :helpers})` returns the query as a threaded `honey.sql.helpers` chain, as both a quoted `:form` and a pretty-printed `:text` (which starts with the `:require` line). Subqueries, CTEs, set operations and `INSERT … SELECT` come out as nested chains, and `:alias` picks the helper alias (default `h`)
+- `honey->helpers` converts any HoneySQL map into the same helper output
+- The test suite evaluates the helper form and text for every case and checks that they build exactly the map `ripen` returns
+
 ## [1.0.33] - 2026-08-13
 ### Added
 - Support for boolean literals (`TRUE`/`FALSE`) and the `NULL` literal
@@ -90,3 +96,5 @@ All notable changes to this project will be documented in this file. This change
 [1.0.27]: https://github.com/plooney81/nectar-sql/compare/1.0.24...1.0.27
 [1.0.31]: https://github.com/plooney81/nectar-sql/compare/1.0.27...1.0.31
 [1.0.32]: https://github.com/plooney81/nectar-sql/compare/1.0.31...1.0.32
+[1.0.33]: https://github.com/plooney81/nectar-sql/compare/1.0.32...1.0.33
+[1.0.34]: https://github.com/plooney81/nectar-sql/compare/1.0.33...1.0.34

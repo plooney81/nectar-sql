@@ -21,7 +21,7 @@ hummingbirds. It serves as the raw material for honey.
 Add to your `deps.edn`:
 
 ```clojure
-com.github.plooney81/nectar-sql {:mvn/version "1.0.32"}
+com.github.plooney81/nectar-sql {:mvn/version "1.0.34"}
 ```
 
 ## Try It from Your REPL
@@ -29,7 +29,7 @@ com.github.plooney81/nectar-sql {:mvn/version "1.0.32"}
 The Clojure REPL includes functions for [downloading and adding libraries][clj-add-lib] at runtime:
 
 ```clojure
-user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.32"})
+user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.34"})
 ;;==> [com.github.jsqlparser/jsqlparser
 ;;==>  com.github.plooney81/nectar-sql
 ;;==>  com.github.seancorfield/honeysql]
@@ -65,6 +65,41 @@ user> (add-lib 'com.github.plooney81/nectar-sql {:mvn/version "1.0.32"})
 ```
 
 This is handy when you have existing SQL and want to know what the HoneySQL equivalent looks like — without trial and error.
+
+### Helper output
+
+If you build queries with [`honey.sql.helpers`][honey-helpers], pass `{:output :helpers}` to get the same query as a threaded helper chain. You get back a quoted form you can `eval` or inspect, plus a pretty-printed string ready to paste:
+
+```clojure
+(nsql/ripen "SELECT a, b FROM t WHERE x = ? ORDER BY a DESC" {:output :helpers})
+;;=> {:form (-> (h/select :a :b) (h/from :t) (h/where [:= :x :?p1]) (h/order-by [:a :desc]))
+;;=>  :text ";; (:require [honey.sql.helpers :as h])\n(-> (h/select :a :b)\n    (h/from :t)\n ..."}
+
+(println (:text *1))
+;; (:require [honey.sql.helpers :as h])
+(-> (h/select :a :b)
+    (h/from :t)
+    (h/where [:= :x :?p1])
+    (h/order-by [:a :desc]))
+```
+
+Subqueries, CTEs, set operations and `INSERT … SELECT` come out as nested helper chains. Use `:alias` to pick the helper alias (default `h`):
+
+```clojure
+(nsql/ripen "SELECT a FROM t" {:output :helpers :alias 'sql})
+;;=> {:form (-> (sql/select :a) (sql/from :t)) ...}
+```
+
+Already have a HoneySQL map? `honey->helpers` converts any map directly, taking the same `:alias` option:
+
+```clojure
+(:form (nsql/honey->helpers {:select [:a] :from [:t] :limit 10}))
+;;=> (-> (h/select :a) (h/from :t) (h/limit 10))
+```
+
+Evaluating the form gives back exactly the map `ripen` returns. The test suite checks this for every supported query.
+
+[honey-helpers]: https://cljdoc.org/d/com.github.seancorfield/honeysql/CURRENT/api/honey.sql.helpers
 
 ## Development
 
