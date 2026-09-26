@@ -90,6 +90,15 @@ Subqueries, CTEs, set operations and `INSERT … SELECT` come out as nested help
 ;;=> {:form (-> (sql/select :a) (sql/from :t)) ...}
 ```
 
+Need both? `{:output :both}` parses once and returns the map alongside the helper output:
+
+```clojure
+(nsql/ripen "SELECT a FROM t" {:output :both})
+;;=> {:map  {:select [:a] :from [:t]}
+;;=>  :form (-> (h/select :a) (h/from :t))
+;;=>  :text ";; (:require [honey.sql.helpers :as h])\n(-> (h/select :a) (h/from :t))\n"}
+```
+
 Already have a HoneySQL map? `honey->helpers` converts any map directly, taking the same `:alias` option:
 
 ```clojure

@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - HoneySQL helper output ([#19](https://github.com/plooney81/nectar-sql/issues/19)): `(ripen sql {:output :helpers})` returns the query as a threaded `honey.sql.helpers` chain, as both a quoted `:form` and a pretty-printed `:text` (which starts with the `:require` line). Subqueries, CTEs, set operations and `INSERT … SELECT` come out as nested chains, and `:alias` picks the helper alias (default `h`)
 - `honey->helpers` converts any HoneySQL map into the same helper output
+- `(ripen sql {:output :both})` returns `{:map … :form … :text …}` from a single parse
 - The test suite evaluates the helper form and text for every case and checks that they build exactly the map `ripen` returns
 
 ### Fixed

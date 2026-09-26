@@ -16,6 +16,15 @@
                   "(-> (h/select :a) (h/from :t))\n")
              text)))))
 
+(deftest ripen-both-output
+  (testing ":output :both returns the map alongside the helper output"
+    (let [sql    "SELECT a FROM t WHERE b = 1"
+          result (nsql/ripen sql {:output :both :alias 'sql})]
+      (is (= #{:map :form :text} (set (keys result))))
+      (is (= (nsql/ripen sql) (:map result)))
+      (is (= (nsql/ripen sql {:output :helpers :alias 'sql})
+             (dissoc result :map))))))
+
 (deftest issue-example
   (let [{:keys [form text]} (nsql/ripen "SELECT a, b FROM t WHERE (x = ?) ORDER BY a DESC"
                                         {:output :helpers})]

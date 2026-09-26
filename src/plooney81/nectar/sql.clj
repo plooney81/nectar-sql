@@ -48,14 +48,16 @@
 
    Options:
      :output - `:map` (default) returns the honeysql map; `:helpers` returns
-               `{:form ... :text ...}`, see `honey->helpers`
-     :alias  - with `:output :helpers`, the helper alias (default `'h`)"
+               `{:form ... :text ...}`, see `honey->helpers`; `:both` returns
+               `{:map ... :form ... :text ...}` from a single parse
+     :alias  - with `:helpers` or `:both`, the helper alias (default `'h`)"
   ([raw-sql] (ripen raw-sql {}))
   ([raw-sql {:keys [output] :or {output :map} :as opts}]
    (let [honey-map (impl/jsql->honey-adapter {} (jsql/to-nectar raw-sql))]
      (case output
        :map     honey-map
-       :helpers (honey->helpers honey-map opts)))))
+       :helpers (honey->helpers honey-map opts)
+       :both    (assoc (honey->helpers honey-map opts) :map honey-map)))))
 
 (comment
   (do
